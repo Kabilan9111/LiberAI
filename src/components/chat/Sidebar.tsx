@@ -33,6 +33,7 @@ const PERSONALITIES: { id: PersonalityMode; label: string; icon: string }[] = [
   { id: "motivational", label: "Motivational", icon: "💪" },
   { id: "study_coach", label: "Study Coach", icon: "📚" },
   { id: "tamil_local", label: "Tamil Local Mode", icon: "🫡" },
+  { id: "uncensored", label: "Uncensored", icon: "💀" },
 ];
 
 const LANGUAGES: { id: Language; label: string }[] = [
@@ -134,14 +135,17 @@ export function Sidebar({ isOpen, setIsOpen, isMobileOpen, setIsMobileOpen }: Si
           <div className="grid grid-cols-2 gap-1.5 px-1">
             {PERSONALITIES.map((p) => {
               const isSelected = personalityMode === p.id;
+              const isUncensored = p.id === "uncensored";
               return (
                 <button
                   key={p.id}
                   onClick={() => setPersonalityMode(p.id)}
                   className={cn(
-                    "flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all duration-300 text-xs",
+                    "flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all duration-300 text-xs cursor-pointer",
                     isSelected
-                      ? "bg-purple-500/10 border-purple-500/50 text-purple-300 font-semibold shadow-[0_0_10px_rgba(168,85,247,0.1)]"
+                      ? isUncensored
+                        ? "bg-red-500/10 border-red-500/50 text-red-300 font-semibold shadow-[0_0_12px_rgba(239,68,68,0.2)]"
+                        : "bg-purple-500/10 border-purple-500/50 text-purple-300 font-semibold shadow-[0_0_10px_rgba(168,85,247,0.1)]"
                       : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10 text-zinc-400"
                   )}
                 >

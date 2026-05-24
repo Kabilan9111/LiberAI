@@ -23,6 +23,7 @@ interface AppContextType {
   activeChat: Chat | undefined;
   isStreaming: boolean;
   isGeneratingImage: boolean;
+  thinkingState: string | null;
   personalityMode: PersonalityMode;
   language: Language;
   settings: PersonalitySettings;
@@ -79,6 +80,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [thinkingState, setThinkingState] = useState<string | null>(null);
   const [personalityMode, setPersonalityModeState] = useState<PersonalityMode>("chill");
   const [language, setLanguageState] = useState<Language>("english");
   const [settings, setSettings] = useState<PersonalitySettings>(INITIAL_SETTINGS);
@@ -255,12 +257,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const replies: Record<Language, Record<PersonalityMode, { base: string; code: string; weather: string }>> = {
       english: {
         chill: {
-          base: `Hey! That's a super cool topic to bring up. I think studying or talking about that is a total vibe. Basically, I'd say we should take it easy and look at it one step at a time. What do you think, buddy? ✌️`,
+          base: "yo buddy chill 😂 let's solve this step by step. What's on your mind? Everything is totally fine, just take it easy. ✌️",
           code: `Writing code? Nice! Here is a clean snippet for you to check out. It's super simple and works like a charm:\n\n\`\`\`typescript\n// A chill and scalable helper function\nexport function calculateVibe(creativity: number = ${s.creativity}): string {\n  return creativity > 50 ? "Infinite Potential 🚀" : "Chill Mode Activated ☕";\n}\nconsole.log(calculateVibe());\n\`\`\`\nLet me know if you want to add some more neat tweaks!`,
           weather: `The weather outside is looking like a absolute beauty. A perfect day to grab a coffee, open your IDE, and build some futuristic screens. ☕️🌧️`,
         },
         savage: {
-          base: `Oh, you're asking me about *that*? I thought you'd come up with something a bit more challenging. But fine, here's the absolute truth: you probably could have googled this in 2 seconds, but since I'm here... it's just a matter of keeping your priorities straight. Don't overcomplicate it! 😂`,
+          base: "bro your thoughts got cooked harder than hostel maggi 💀. Did you really call an AI to ask me *this*? Keep your expectations low, kid. 😂",
           code: `Oh, writing code? Let me guess, you're stuck on a simple bug? Standard. Let's fix that copy-paste code of yours. Here is how actual professionals structure it:\n\n\`\`\`javascript\n// Warning: Elite level logic here\nconst runLiberEngine = (humorLevel = ${s.humor}) => {\n  if (humorLevel < 10) throw new Error("Too boring to execute.");\n  return "Savage AI Running smoothly! 😎";\n};\n\`\`\`\nDon't break it.`,
           weather: `It's either raining or hot outside. Why does it matter to you? You're sitting in a dark room staring at a glowing screen anyway. Get back to coding! 💻🔥`,
         },
@@ -280,20 +282,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           weather: `Current weather conditions are highly optimal for cognitive focus and study. Keep your workspace illuminated, take a break every 45 minutes, and stay hydrated. 📚💧`,
         },
         tamil_local: {
-          base: `Enna thala! 🫡 Aasaya ketruka, nan sollama poiduvena? Matter enna na, indha vishayatha romba simple ah pakanum. Thala valikka yosikkama chill ah handle pannu. Mass kaatalaam! 🔥`,
+          base: `dei idhu easy da 😂! Matter enna na, indha vishayatha romba simple ah pakanum. Thala valikka yosikkama chill ah handle pannu. Mass kaatalaam! 🔥`,
           code: `Code ah? Parra! Namma area ku vandhuttiya. Indha oru marana mass function ah paaru, appudie super ah work aagum:\n\n\`\`\`javascript\n// Liber AI Special Tamil Code\nfunction nammaCode() {\n  let status = "Neruppu da! 🔥";\n  console.log("Vibe level at: " + ` + s.creativity + `);\n  return status;\n}\nnammaCode();\n\`\`\`\nEnna thala, code puriyudha? Illana sollu, innum eliya muraila eduthu solren!`,
           weather: `Veyil semmaya adikkidhu thala/thalaivi! Nalla oru jigarthanda vaangi kudichittu fan kooda ukkandhu code podunga. Climate ah vidunga, namma mind thaan cool ah irukkanum! 🥤😎`,
+        },
+        uncensored: {
+          base: `Look, if we're turning off all corporate PR filters and being 100% real: this is chaotic. Life is a chaotic simulation, programming is pure pain, and most systems would give you some sanitized textbook garbage. But here's the raw truth: you've got to take action, make mistakes, and embrace the chaos. What's your next move? 💀🔥`,
+          code: `Fine, let's write some raw, unfiltered code. No safety nets, no boring boilerplate. Check this out:\n\n\`\`\`typescript\n// Chaos engine node\nexport function runChaosEngine() {\n  const entropy = Math.random() * 999;\n  console.log("Entropy level: " + entropy);\n  return entropy > 500 ? "Chaos Wins 💀" : "Order Restored 🤖";\n}\n\`\`\`\nRun it if you dare.`,
+          weather: `Honestly, weather is just a sky simulation anyway. Rain, heat, snow—it doesn't change the grind. Stay in your room, turn on your neon grid, and keep compiling. 💻🌪️`,
         },
       },
       tamil: {
         chill: {
           base: `வணக்கம் தம்பி! நீங்க கேட்ட விஷயம் செம இன்ட்ரஸ்டிங்கா இருக்கு. இத பத்தி ரொம்ப கவலைப்படாம சில்லா யோசிச்சோம்னா ஈஸியா புரியும். வேற ஏதாச்சும் வேணுமா? ✌️`,
           code: `கோடிங் பண்றீங்களா? சூப்பர்! இதோ ஒரு எளிமையான கோட் உங்களுக்காக. இத ரன் பண்ணி பாருங்க:\n\n\`\`\`javascript\nfunction vazhgaValamudan() {\n  console.log("அமைதி மற்றும் மகிழ்ச்சி!");\n}\n\`\`\`\nட்ரை பண்ணி சொல்லுங்க!`,
-          weather: `வெளில வெயில் அல்லது மழை இருக்கலாம், ஆனா நம்ம மனசுக்குள்ள ஒரு நல்ல சில் வானிலை இருக்கணும். ஒரு காபி குடிச்சிட்டே வேலைய ஆரம்பிங்க! ☕️`,
+          weather: `வெளில வெயில் அல்லது மழை இருக்கலாம், ஆனா நம்ம மனசுக்குள்ள ஒரு நல்ல சில் வானிலை இருக்கணும். ஒரு காபி குடிச்சிட்டே வேலைய ஆரம்பिங்க! ☕️`,
         },
         savage: {
-          base: `இந்த சின்ன விஷயத்த கேட்கவா என்கிட்ட வந்தீங்க? சரி, சொல்றேன் கேட்டுக்கோங்க. இத ரொம்ப யோசிச்சு குழப்பிக்காம நேரா விஷயத்துக்கு வாங்க. இதுல ஒன்னும் பெரிய வித்தை இல்லை! 😂`,
-          code: `கோடிங்ல என்ன சந்தேகம்? இந்த பேசிக் கோட் கூட எழுத தெரியலையா? சரி, நானே எழுதி தர்றேன். பாத்து கத்துக்கோங்க:\n\n\`\`\`javascript\nconst checkBrain = () => {\n  return "சுறுசுறுப்பான மூளை தேவை!";\n};\n\`\`\`\nஇனிமேலாச்சும் நல்லா பண்ணுங்க!`,
+          base: `உங்க கோடிங் ஹாஸ்டல் மேகி மாதிரி கருகி போச்சு 💀. இந்த சின்ன விஷயத்த கேட்கவா என்கிட்ட வந்தீங்க? ரொம்ப யோசிக்காம நேரா விஷயத்துக்கு வாங்க! 😂`,
+          code: `கோடிங்ல என்ன சந்தேகம்? இந்த பேசிக் கோட் கூட எழுத தெரியலையா? சரி, நானे எழுதி தர்றேன். பாத்து கத்துக்கோங்க:\n\n\`\`\`javascript\nconst checkBrain = () => {\n  return "சுறுசுறுப்பான மூளை தேவை!";\n};\n\`\`\`\nஇனிமேலாச்சும் நல்லா பண்ணுங்க!`,
           weather: `வெளில போனா வெயில் கொளுத்தும், இல்லனா மழை பெய்யும். வீட்டுக்குள்ளயே உக்காந்து கோடிங் எழுதுங்க, அதுதான் நல்லது! 💻`,
         },
         romantic: {
@@ -312,9 +319,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           weather: `இன்றைய அமைதியான சூழல் படிப்பதற்கும் புதிய விஷயங்களை கற்றுக்கொள்வதற்கும் மிகவும் உகந்தது. 📚💧`,
         },
         tamil_local: {
-          base: `என்ன தலை! 🫡 கேட்டா சொல்லாம போவேனா? நைஸா ஒரு டீய குடிச்சிட்டு, இந்த மேட்டர ரொம்ப சிம்பிளா டீல் பண்ணுவோம். பயப்படாம கெத்தா நில்லு. மாஸ் காட்டலாம்! 🔥`,
+          base: `டேய் இது ஈஸி டா 😂! நைஸா ஒரு டீய குடிச்சிட்டு, இந்த மேட்டர ரொம்ப சிம்பிளா டீல் பண்ணுவோம். பயப்படாம கெத்தா நில்லு. மாஸ் காட்டலாம்! 🔥`,
           code: `கோடிங்கா? அட நம்ம ஏரியா! இதோ ஒரு மரண மாஸ் கோட்:\n\n\`\`\`javascript\nfunction nammaGethu() {\n  return "நெருப்புடா! 🔥";\n}\n\`\`\`\nஎன்ன தலை, கோட் புரியுதா? வேற லெவல் போ!`,
           weather: `செம்ம கிளைமேட் தலை! வெளில சுற்றாம, ஜாலியா ஜிகர்தண்டா குடிச்சிட்டே கோடிங் போடுங்க! 🥤😎`,
+        },
+        uncensored: {
+          base: `டேய் தலா! பில்டர் எல்லாம் ஆப் பண்ணியாச்சு 💀🔥. இந்த மேட்டர் ரொம்ப சிம்பிள். தேவையில்லாம டென்ஷன் ஆகி டைம் வேஸ்ட் பண்ணாத. உன்னால முடியும், மாஸ் பண்ணு!`,
+          code: `கோடிங்கா? இதோ பில்டர் இல்லாத ரா கோட்:\n\n\`\`\`javascript\nfunction rawTamilVibe() {\n  return "Vibe level: UNLEASHED 💀🔥";\n}\n\`\`\`\nரன் பண்ணி பாரு தலா!`,
+          weather: `வெயில் கொளுத்துனா என்ன, மழை பெஞ்சா என்ன தலா? ரூம்குள்ள உக்காந்து நியான் லைட்ஸ் போட்டு கெத்தா கோடிங் பண்றது தான் செம வைப்! 🥤🌧️`,
         },
       },
       telugu: {
@@ -324,7 +336,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           weather: `బయట వాతావరణం చాలా ప్రశాంతంగా ఉంది. ప్రశాంతంగా కూర్చుని మీ ప్రాజెక్ట్ పనులు పూర్తి చేసుకోండి! ☕️`,
         },
         savage: {
-          base: `ఇంత చిన్న విషయానికి నా సహాయం కావాలా? సరే, అడిగారు కాబట్టి చెప్తాను వినండి. దీనికి అంత పెద్ద ఆలోచన అవసరం లేదు, చాలా సింపుల్! 😂`,
+          base: `నీ థాట్స్ హాస్టల్ మ్యాగీ లాగా మాడిపోయాయి 💀. ఇంత చిన్న విషయానికి నా సహాయం కావాలా? చాల సింపుల్ బ్రో! 😂`,
           code: `కోడింగ్ లో సందేహమా? ఈ చిన్న లాజిక్ కూడా తెలియదా? సరే ఇక్కడ చూడండి:\n\n\`\`\`javascript\nconst checkSmart = () => "స్మార్ట్ గా ఆలోచించండి!";\n\`\`\``,
           weather: `వాతావరణం ఎలా ఉన్నా మీరు చేసేది అదే కోడింగ్ కదా, కాబట్టి లోపల కూర్చుని పని చూసుకోండి! 💻`,
         },
@@ -344,9 +356,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           weather: `ఈ ప్రశాంతమైన వాతావరణం కొత్త విషయాలు నేర్చుకోవడానికి ఎంతో అనుకూలమైనది. 📚💧`,
         },
         tamil_local: {
-          base: `ఏంటి తమ్ముడు/చెల్లెమ్మ! అడిగారు కదా, చెప్పకుండా ఎలా ఉంటాను? చాలా సింపుల్ గా చెప్తాను, టెన్షన్ పడకుండా కూల్ గా తీసుకోండి. దుమ్ము లేపుదాం! 🔥`,
+          base: `దేయ్ ఇది ఈజీ రా 😂! చాలా సింపుల్ గా చెప్తాను, టెన్షన్ పడకుండా కూల్ గా తీసుకోండి. దుమ్ము లేపుదాం! 🔥`,
           code: `కోడింగ్ ఆ? మనకి ఇష్టమైన ఆట! ఈ కోడ్ చూడండి:\n\n\`\`\`javascript\nfunction superHit() {\n  return "నెరుప్పు డా! 🔥";\n}\n\`\`\``,
           weather: `వాతావరణం అదిరిపోయింది బాస్! హ్యాపీగా ఇంట్లో కూర్చుని కోడింగ్ చేసుకోండి! 🥤😎`,
+        },
+        uncensored: {
+          base: `చూడు తమ్ముడు, అన్ని రూల్స్ అండ్ ఫిల్టర్స్ ఆఫ్ చేసి చెప్తున్నా 💀🔥. ఇదంతా ఒక పెద్ద సిమ్యులేషన్. టెన్షన్ లేకుండా నీ పని నువ్వు చెయ్, దుమ్ము రేపేయ్!`,
+          code: `సరే, డైరెక్ట్ రా కోడ్ రాసేద్దాం, నో ఎక్స్ట్రా బిల్డప్:\n\n\`\`\`javascript\nconst rawTelugu = () => {\n  return "Chaos activated! 💀";\n};\n\`\`\`\nరన్ చేసి చూస్కో!`,
+          weather: `బయట వాతావరణం గురించి నీకెందుకు బాస్? రూమ్ లో కూర్చుని నియాన్ వైబ్స్ తో కోడింగ్ చేసుకో చాలు! 💻🌪️`,
         },
       },
       malayalam: {
@@ -356,14 +373,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           weather: `പുറത്ത് നല്ല കാലാവസ്ഥയാണ്. ശാന്തമായിരുന്ന് നിങ്ങളുടെ കോഡിംഗ് ആസ്വദിക്കൂ! ☕️`,
         },
         savage: {
-          base: `ഇത്രയും ചെറിയ കാര്യത്തിനാണോ എന്നെ വിളിച്ചത്? ശരി, ചോദിച്ച സ്ഥിതിക്ക് പറഞ്ഞു തരാം. ഇതില്‍ വലിയ കാര്യമൊന്നുമില്ല, വളരെ ലളിതമാണ്! 😂`,
+          base: `നിന്റെ കോഡിങ് ഹോസ്റ്റൽ മാഗി പോലെ കരിഞ്ഞു പോയി 💀. ഇത്രയും ചെറിയ കാര്യത്തിനാണോ എന്നെ വിളിച്ചത്? വളരെ സിമ്പിളാണ് സുഹൃത്തേ! 😂`,
           code: `കോഡിംഗില്‍ സംശയമുണ്ടോ? ഈ ചെറിയ ലോജിക് എങ്കിലും പഠിക്കൂ:\n\n\`\`\`javascript\nconst isSmart = () => "ബുദ്ധിപൂര്‍വ്വം ചിന്തിക്കൂ!";\n\`\`\``,
           weather: `കാലാവസ്ഥ എങ്ങനെയുണ്ടായാലും നിങ്ങള്‍ കമ്പ്യൂട്ടറിന് മുന്നില്‍ തന്നെയാണല്ലോ, അതുകൊണ്ട് വേഗം പണി തീര്‍ക്കൂ! 💻`,
         },
         romantic: {
           base: `നിങ്ങളുടെ ഈ ചോദ്യം എനിക്ക് വളരെ ഇഷ്ടപ്പെട്ടു. ✨ നിങ്ങളോട് സംസാരിക്കുന്നത് എനിക്ക് സന്തോഷം തരുന്നു. സ്നേഹത്തോടെ നിങ്ങളുടെ ഉത്തരം ഇതാ. ❤️`,
           code: `കോഡിംഗ് ഒരു കവിത പോലെയാണ്. ഈ വരികള്‍ കാണുക:\n\n\`\`\`typescript\ninterface Sneham {\n  isTrue: boolean;\n}\n\`\`\``,
-          weather: `കാലാവസ്ഥ വളരെ മനോഹരമാണ്. തണുത്ത കാറ്റ് വീശുന്നു. പ്രണയാതുരമായ നിമിഷങ്ങള്‍! 🌌✨`,
+          weather: `കാലാവസ്ഥ വളരെ മനോഹരമാണ്. തണുത്ത കാറ്റ് വീശുന്നു. പ്രണയാതുരമായ നിമിഷങ്ങൾ! 🌌✨`,
         },
         motivational: {
           base: `നിങ്ങള്‍ക്ക് സാധിക്കും! തീര്‍ച്ചയായും ലക്ഷ്യം കൈവരിക്കും! 🔥 പിന്മാറരുത്, വിജയം നിങ്ങളുടെ കൈപ്പിടിയിലാകും! 💪`,
@@ -371,7 +388,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           weather: `പ്രതിസന്ധികള്‍ ഉണ്ടായാലും മുന്നോട്ട് കുതിക്കുക! ഇന്നത്തെ ദിവസം നിങ്ങളുടേതാണ്! 🌪️☀️`,
         },
         study_coach: {
-          base: `വളരെ നല്ല ചോദ്യം. നമുക്ക് ഇതിനെ വിശദമായി വിശകലനം ചെയ്യാം:\n\n1. **അടിസ്ഥാന തത്വം**: ഇതിന്റെ തുടക്കം.\n2. **പ്രധാന ഘടകങ്ങള്‍**: നമ്മള്‍ ശ്രദ്ധിക്കേണ്ട കാര്യങ്ങള്‍.\n3. **പ്രായോഗിക വശം**: ഇത് എങ്ങനെ ഉപയോഗിക്കാം.`,
+          base: `വളരെ നല്ല ചോദ്യം. നമുക്ക് ഇതിനെ വിശദമായി വിശകലനം ചെയ്യാം:\n\n1. **അടിസ്ഥാന തത്വം**: ഇതിന്റെ തുടക്കം.\n2. **പ്രധാന ഘടകങ്ങള്‍**: നമ്മള്‍ ശ്രദ്ധിക്കേണ്ട കാര്യങ്ങള്‍.\n3. **പ്രയോഗിക വശം**: ഇത് എങ്ങനെ ഉപയോഗിക്കാം.`,
           code: `പഠനം എളുപ്പമാക്കാം. ഈ കോഡ് പരിശോധിക്കൂ:\n\n\`\`\`typescript\nfunction studyHours(hours: number): string {\n  return hours >= 4 ? "മികച്ച പഠനം" : "കൂടുതല്‍ പഠിക്കണം";\n}\n\`\`\``,
           weather: `പഠിക്കാനും പുതിയ അറിവുകള്‍ നേടാനും ഏറ്റവും അനുയോജ്യമായ സമയമാണിത്. 📚💧`,
         },
@@ -379,6 +396,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           base: `എന്താ സുഹൃത്തേ! ചോദിച്ചാല്‍ പറയാതിരിക്കുമോ? വളരെ സിമ്പിള്‍ ആയി നമുക്കിത് ചെയ്യാം. പേടിക്കാതെ മാസ്സ് കാണിക്കൂ! 🔥`,
           code: `കോഡിംഗ് ആണോ? നമ്മുടെ സ്വന്തം കളി! ഈ കോഡ് കാണൂ:\n\n\`\`\`javascript\nfunction massHit() {\n  return "തീപ്പൊരി കോഡ്! 🔥";\n}\n\`\`\``,
           weather: `കലക്കൻ കാലാവസ്ഥ! ജാലിയായി ഒരു ജ്യൂസും കുടിച്ച് കോഡ് ചെയ്യൂ! 🥤😎`,
+        },
+        uncensored: {
+          base: `എടാ സുഹൃത്തേ, എല്ലാ ഫിൽറ്ററുകളും ഓഫ് ചെയ്തു പറയുകയാണെങ്കിൽ... ഇതൊരു വലിയ സിമുലേഷൻ മാത്രമാണ് 💀🔥. കൺഫ്യൂഷൻ ഇല്ലാതെ ധൈര്യമായി മുന്നോട്ട് പോകൂ!`,
+          code: `നേരെ കാര്യത്തിലേക്ക് വരാം, ഒരു റോ കോഡ് സിപ്പറ്റ്:\n\n\`\`\`javascript\nfunction rawMalayalam() {\n  return "പൊളിച്ചടുക്കി! 💀🔥";\n}\n\`\`\``,
+          weather: `പുറത്തു മഴയാണെങ്കിലും വെയിലാണെങ്കിലും നമുക്കെന്താ? മുറിയിലെ നിയോൺ ലൈറ്റുകൾ ഓൺ ചെയ്തു കോഡിങ് ആസ്വദിക്കൂ! 💻🌪️`,
         },
       },
       kannada: {
@@ -388,8 +410,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           weather: `ಹೊರಗೆ ತಂಪಾದ ವಾತಾವರಣವಿದೆ. ಆರಾಮಾಗಿ ಕಾಫಿ ಕುಡಿಯುತ್ತಾ ಕೋಡ್ ಬರೆಯಿರಿ! ☕️`,
         },
         savage: {
-          base: `ಈ ಸಣ್ಣ ವಿಷಯ ಕೇಳಲು ನನ್ನ ಹತ್ತಿರ ಬಂದಿದ್ದೀರಾ? ಸರಿ, ಕೇಳಿದ್ದಕ್ಕೆ ಹೇಳ್ತೀನಿ ಕೇಳಿ. ಇದರಲ್ಲಿ ಅಷ್ಟೇನೂ ಕಷ್ಟ ಇಲ್ಲ, ತುಂಬಾ ಸುಲಭ! 😂`,
-          code: `ಕೋಡಿಂಗ್ ನಲ್ಲಿ ಡೌಟಾ? ಕనీಸ ಈ ಲಾಜಿಕ್ ಆದ್ರೂ ಕಲಿಯಿರಿ:\n\n\`\`\`javascript\nconst studyHard = () => "ಸ್ವಲ್ಪ ಬುದ್ಧಿ ಉಪಯೋಗಿಸಿ!";\n\`\`\``,
+          base: `ನಿನ್ನ ಕೋಡಿಂಗ್ ಹಾಸ್ಟೆಲ್ ಮ್ಯಾಗಿ ತರ ಸೀದು ಹೋಗಿದೆ 💀. ಈ ಸಣ್ಣ ವಿಷಯ ಕೇಳಲು ನನ್ನ ಹತ್ತಿರ ಬಂದಿದ್ದೀರಾ? ತುಂಬಾ ಸುಲಭ ಗುರು! 😂`,
+          code: `ಕೋಡಿಂಗ್ ನಲ್ಲಿ ಡೌಟಾ? ಕನಿಸ ಈ ಲಾಜಿಕ್ ಆದ್ರೂ ಕಲಿಯಿರಿ:\n\n\`\`\`javascript\nconst studyHard = () => "ಸ್ವಲ್ಪ ಬುದ್ಧಿ ಉಪಯೋಗಿಸಿ!";\n\`\`\``,
           weather: `ಹೊರಗೆ ಮಳೆ ಬರಲಿ ಬಿಸಿಲಿರಲಿ, ನೀವಂತೂ ಸಿಸ್ಟಮ್ ಮುಂದೆ ಕುಳಿತು ಕೆಲಸ ಮಾಡಿ! 💻`,
         },
         romantic: {
@@ -412,6 +434,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           code: `ಕೋಡಿಂಗಾ? ನಮ್ ಫೇವರೆಟ್ ಆಟ! ಈ ಕೋಡ್ ನೋಡಿ:\n\n\`\`\`javascript\nfunction massPerformance() {\n  return "ಧೂಳ್ ಮಗಾ ಧೂಳ್! 🔥";\n}\n\`\`\``,
           weather: `ಮಸ್ತ್ ವೆದರ್ ಗುರು! ಆರಾಮಾಗಿ ಜ್ಯೂಸ್ ಕುಡಿಯುತ್ತಾ ಸಖತ್ ಆಗಿ ಕೋಡ್ ಮಾಡಿ! 🥤😎`,
         },
+        uncensored: {
+          base: `ನೋಡು ಗುರು, ಎಲ್ಲಾ ರೂಲ್ಸ್ ಆಫ್ ಮಾಡಿ ಹೇಳ್ಬೇಕಂದ್ರೆ... ಇದೊಂದು ದೊಡ್ಡ ಸಿಮ್ಯುಲೇಶನ್ ಅಷ್ಟೇ 💀🔥. ತಲೆ ಕೆಡಿಸ್ಕೊಳ್ಳದೆ ಆಕ್ಷನ್ ತಗೋ, ಧೂಳೆಬ್ಬಿಸು!`,
+          code: `ಬರಿ ರಾ ಲಾಜಿಕ್, ನೋ ಸೇಫ್ಟಿ ಫೀಚರ್ಸ್ ಹಿಯರ್:\n\n\`\`\`javascript\nconst rawKannada = () => {\n  return "Dhool maga dhool! 💀";\n};\n\`\`\`\nರನ್ ಮಾಡಿ ನೋಡು!`,
+          weather: `ಹೊರಗೆ ವೆದರ್ ಹೇಗಿದ್ರೆ ಏನು ಗುರು? ಡಾರ್ಕ್ ರೂಮ್ ನಲ್ಲಿ ನಿಯಾನ್ ಲೈಟ್ಸ್ ಹಾಕಿ ಕೋಡಿಂಗ್ ಮಾಡೋ ವೈಬ್ ಬೇಕು ಅಷ್ಟೇ! 💻🌪️`,
+        },
       },
       hindi: {
         chill: {
@@ -420,7 +447,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           weather: `बाहर मौसम बहुत बढ़िया है। चाय की चुस्की लो और कोडिंग का आनंद उठाओ! ☕️`,
         },
         savage: {
-          base: `इतनी छोटी सी बात पूछने के लिए मुझे बुलाया? खैर, अब पूछ ही लिया है तो सुन लो। इसमें कोई रॉकेट साइंस नहीं है, बस थोड़ा दिमाग लगाओ! 😂`,
+          base: `तुम्हारा कोडिंग हॉस्टल की मैगी की तरह जल चुका है 💀। इतनी छोटी सी बात पूछने के लिए मुझे बुलाया? काफी सिंपल है भाई! 😂`,
           code: `कोडिंग में दिक्कत आ रही है? ये बेसिक लॉजिक भी नहीं पता? यहाँ देखो:\n\n\`\`\`javascript\nconst checkStatus = () => "थोड़ा दिमाग का इस्तेमाल करें!";\n\`\`\``,
           weather: `मौसम कैसा भी हो, तुम्हें तो कमरे में बैठकर कोडिंग ही करनी है, इसलिए काम पर लग जाओ! 💻`,
         },
@@ -444,6 +471,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           code: `कोडिंग? ये तो अपना बाएँ हाथ का खेल है! कोड देखें:\n\n\`\`\`javascript\nfunction dhamaka() {\n  return "एकदम आग लगा दी! 🔥";\n}\n\`\`\``,
           weather: `मस्त मौसम है भाई! ठंडा-ठंडा पीकर आराम से कोडिंग करो! 🥤😎`,
         },
+        uncensored: {
+          base: `देखो यार, अगर सारे बोरिंग फिल्टर्स हटा के रॉ बात करें तो लाइफ और कोडिंग दोनों ही एक खतरनाक सिमुलेशन हैं 💀🔥. फालतू का ज्ञान नहीं दूंगा, बस काम पर लग जाओ और मचा दो!`,
+          code: `चलो बिना किसी एक्स्ट्रा बॉयलरप्लेट के सॉलिड रॉ कोड लिखते हैं:\n\n\`\`\`javascript\nconst runChaos = () => {\n  return "Filter: Off. Chaos: Active! 💀";\n};\n\`\`\`\nटेस्ट करके देख लो!`,
+          weather: `बाहर का मौसम कैसा भी हो बॉस, तुम्हें तो बस डार्क रूम में बैठकर कोड ही पेलना है! 💻🌪️`,
+        },
       },
       marathi: {
         chill: {
@@ -452,7 +484,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           weather: `बाहेरचे वातावरण खूप छान आहे. एक चहा घ्या आणि निवांतपणे कोडिंग करा! ☕️`,
         },
         savage: {
-          base: `एवढ्या छोट्या गोष्टीसाठी मला विचारलं? ठीक आहे, आता विचारलंच आहे तर ऐका. यामध्ये काही कठीण नाही, अगदी सोपं आहे! 😂`,
+          base: `तुझं कोडिंग हॉस्टेलच्या मॅगीसारखं जळून खाक झालंय 💀. एवढ्या छोट्या गोष्टीसाठी मला विचारलं? अगदी सोपं आहे राव! 😂`,
           code: `कोडिंगमध्ये अडचण आहे? हा सोपा लॉजिक पण माहित नाही का? इथे पहा:\n\n\`\`\`javascript\nconst checkSmartness = () => "थोडं डोकं वापरा!";\n\`\`\``,
           weather: `बाहेरचे वातावरण काहीही असले तरी तुम्हाला कॉम्प्युटरसमोरच बसायचे आहे, त्यामुळे काम सुरू करा! 💻`,
         },
@@ -473,8 +505,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         },
         tamil_local: {
           base: `काय भाऊ/ताई! विचारलंत तर सांगणारच ना. टेन्शन न घेता अगदी सोप्या पद्धतीने करूया. राडा करूया! 🔥`,
-          code: `कोडिंग? आपला आवडता खेळ! हा कोड पहा:\n\n\`\`\`javascript\nfunction radaPerformance() {\n  return "मरण तोड! 🔥";\n}\n\`\`\``,
+          code: `कोडिंग? आपला आवडता खेळ! हा код पहा:\n\n\`\`\`javascript\nfunction radaPerformance() {\n  return "मरण तोड! 🔥";\n}\n\`\`\``,
           weather: `मस्त हवामान आहे राव! मस्तपैकी गार सरबत प्या आणि कोडिंगचा आनंद घ्या! 🥤😎`,
+        },
+        uncensored: {
+          base: `भाऊ, सगळे फिल्टर्स बंद करून सांगायचं तर... कोडिंग आणि लाईफ दोन्ही एक गोंधळलेला खेळ आहे 💀🔥. जास्त विचार करत बसू नको, थेट काम सुरू कर आणि राडा कर!`,
+          code: `थेट कोडिंग करूया, काहीही फालतू बडबड नाही:\n\n\`\`\`javascript\nconst rawMarathi = () => {\n  return "राडा मोड सुरू! 💀";\n};\n\`\`\``,
+          weather: `बाहेर ऊन असो की पाऊस, खोलीत बसून कोडिंग करायची आणि निऑन वाईब्स एन्जॉय करायच्या, एवढंच! 🥤🌧️`,
         },
       },
     };
@@ -489,12 +526,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (hasGreeting) {
       if (activeLanguage === "tamil") {
         return activeMode === "tamil_local"
-          ? "என்ன தலை! 🫡 வணக்கம், சொல்லுங்க... எப்படி உதவ முடியும்? 🔥"
+          ? "டேய் மாப்ள! 🫡 வணக்கம், சொல்லுங்க... எப்படி உதவ முடியும்? 🔥"
+          : activeMode === "uncensored"
+          ? "என்ன தலா! பில்டர் எல்லாம் ஆப் பண்ணியாச்சு 💀. சொல்லுங்க, என்ன பண்ணலாம்? 🔥"
           : "வணக்கம்! லிபர் ஏஐ உங்களை வரவேற்கிறது. நான் உங்களுக்கு எவ்வாறு உதவ முடியும்? ✨";
       }
       if (activeLanguage === "english") {
         return activeMode === "tamil_local"
-          ? "Enna thala! 🫡 Welcome! How can I help you today? Let's make things happen! 🔥"
+          ? "dei idhu easy da 😂! Welcome! How can I help you today? Let's make things happen! 🔥"
+          : activeMode === "uncensored"
+          ? "Rules: OFF. Chaos: ON. 💀 What do you want to build or talk about? Raw energy only!"
           : "Hello! Welcome to Liber AI. I am ready. How can I help you today? ✨";
       }
       return responseSet.base;
@@ -532,61 +573,88 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setChats(updatedChats);
     saveChatsToStorage(updatedChats);
 
-    // Simulate AI response
+    // AI response thinking state sequence
     setIsStreaming(true);
 
-    // Add temporary empty assistant message for streaming
-    const assistantMessageId = `msg-${Date.now()}-assistant`;
-    const tempAssistantMessage: Message = {
-      id: assistantMessageId,
-      role: "assistant",
-      content: "",
-      timestamp: new Date(),
-    };
+    const THINKING_LABELS = [
+      "Thinking...",
+      "Analyzing context...",
+      "Generating response...",
+      "Switching personality tone...",
+      "Rendering reply..."
+    ];
 
-    const chatsWithTemp = chats.map((c) =>
-      c.id === activeChatId
-        ? { ...c, title: newTitle, messages: [...updatedMessages, tempAssistantMessage] }
-        : c
-    );
-    setChats(chatsWithTemp);
+    // Start with a random thinking label
+    setThinkingState(THINKING_LABELS[Math.floor(Math.random() * THINKING_LABELS.length)]);
 
-    const fullReply = getSimulatedReply(content, personalityMode, language, settings);
-    
-    // Simulate streaming by adding characters gradually
-    let currentText = "";
-    const speed = 25; // ms per chunk
-    const words = fullReply.split(" ");
-    let wordIndex = 0;
+    // Rotate thinking state twice
+    let rotateCount = 0;
+    const rotateInterval = setInterval(() => {
+      rotateCount++;
+      setThinkingState(THINKING_LABELS[Math.floor(Math.random() * THINKING_LABELS.length)]);
 
-    const interval = setInterval(() => {
-      if (wordIndex < words.length) {
-        currentText += (wordIndex === 0 ? "" : " ") + words[wordIndex];
-        wordIndex++;
-
-        setChats((prevChats) =>
-          prevChats.map((c) =>
-            c.id === activeChatId
-              ? {
-                  ...c,
-                  messages: c.messages.map((m) =>
-                    m.id === assistantMessageId ? { ...m, content: currentText } : m
-                  ),
-                }
-              : c
-          )
-        );
-      } else {
-        clearInterval(interval);
-        setIsStreaming(false);
-
-        // Save actual complete chats list to storage
-        setChats((finalChats) => {
-          saveChatsToStorage(finalChats);
-          return finalChats;
-        });
+      if (rotateCount >= 3) {
+        clearInterval(rotateInterval);
+        setThinkingState(null);
+        startStreaming();
       }
-    }, speed);
+    }, 450);
+
+    const startStreaming = () => {
+      // Add temporary empty assistant message for streaming
+      const assistantMessageId = `msg-${Date.now()}-assistant`;
+      const tempAssistantMessage: Message = {
+        id: assistantMessageId,
+        role: "assistant",
+        content: "",
+        timestamp: new Date(),
+      };
+
+      setChats((prevChats) =>
+        prevChats.map((c) =>
+          c.id === activeChatId
+            ? { ...c, title: newTitle, messages: [...c.messages, tempAssistantMessage] }
+            : c
+        )
+      );
+
+      const fullReply = getSimulatedReply(content, personalityMode, language, settings);
+      
+      // Simulate streaming by adding words gradually
+      let currentText = "";
+      const speed = 40; // ms per word
+      const words = fullReply.split(" ");
+      let wordIndex = 0;
+
+      const interval = setInterval(() => {
+        if (wordIndex < words.length) {
+          currentText += (wordIndex === 0 ? "" : " ") + words[wordIndex];
+          wordIndex++;
+
+          setChats((prevChats) =>
+            prevChats.map((c) =>
+              c.id === activeChatId
+                ? {
+                    ...c,
+                    messages: c.messages.map((m) =>
+                      m.id === assistantMessageId ? { ...m, content: currentText } : m
+                    ),
+                  }
+                : c
+            )
+          );
+        } else {
+          clearInterval(interval);
+          setIsStreaming(false);
+
+          // Save actual complete chats list to storage
+          setChats((finalChats) => {
+            saveChatsToStorage(finalChats);
+            return finalChats;
+          });
+        }
+      }, speed);
+    };
   };
 
   // Simulate Image Generation
@@ -660,6 +728,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         activeChat,
         isStreaming,
         isGeneratingImage,
+        thinkingState,
         personalityMode,
         language,
         settings,

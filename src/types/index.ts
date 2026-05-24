@@ -13,7 +13,8 @@ export type PersonalityMode =
   | "romantic"
   | "motivational"
   | "study_coach"
-  | "tamil_local";
+  | "tamil_local"
+  | "uncensored";
 
 export type Language =
   | "english"

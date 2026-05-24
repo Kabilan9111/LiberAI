@@ -133,7 +133,7 @@ function parseInlineBold(text: string) {
 }
 
 export function ChatArea({ onMenuClick }: ChatAreaProps) {
-  const { activeChat, sendMessage, isStreaming, personalityMode, language } = useApp();
+  const { activeChat, sendMessage, isStreaming, thinkingState, personalityMode, language } = useApp();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -232,12 +232,15 @@ export function ChatArea({ onMenuClick }: ChatAreaProps) {
           ) : (
             activeChat?.messages.map((msg, i) => {
               const isUser = msg.role === "user";
+              const isLast = i === activeChat.messages.length - 1;
+              const showCursor = !isUser && isStreaming && isLast && !thinkingState;
+
               return (
                 <motion.div
                   key={msg.id}
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
+                  transition={{ type: "spring", stiffness: 100, damping: 15 }}
                   className={cn(
                     "flex gap-4 items-start",
                     isUser ? "justify-end" : "justify-start"
@@ -253,13 +256,18 @@ export function ChatArea({ onMenuClick }: ChatAreaProps) {
                       "max-w-[82%] rounded-2xl p-4 md:p-5 shadow-sm text-sm border",
                       isUser
                         ? "bg-zinc-900 border-zinc-800 rounded-tr-none text-zinc-100"
-                        : "bg-zinc-950/40 border-white/5 rounded-tl-none shadow-[0_0_15px_rgba(255,255,255,0.01)] text-zinc-200"
+                        : "bg-zinc-950/45 border-white/5 rounded-tl-none shadow-[0_0_15px_rgba(255,255,255,0.01)] text-zinc-200"
                     )}
                   >
                     {isUser ? (
                       <div className="whitespace-pre-wrap select-text">{msg.content}</div>
                     ) : (
-                      <Markdown content={msg.content} />
+                      <div className="relative">
+                        <Markdown content={msg.content} />
+                        {showCursor && (
+                          <span className="inline-block ml-1 text-purple-400 font-bold animate-pulse text-base leading-none">▋</span>
+                        )}
+                      </div>
                     )}
                   </div>
                   {isUser && (
@@ -272,8 +280,8 @@ export function ChatArea({ onMenuClick }: ChatAreaProps) {
             })
           )}
 
-          {/* Streaming/Typing Loader */}
-          {isStreaming && (
+          {/* Thinking State */}
+          {isStreaming && thinkingState && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -282,10 +290,13 @@ export function ChatArea({ onMenuClick }: ChatAreaProps) {
               <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-blue-500 flex-shrink-0 flex items-center justify-center text-xs text-white font-bold shadow-[0_0_10px_rgba(168,85,247,0.3)] animate-pulse">
                 L
               </div>
-              <div className="bg-zinc-950/40 border border-white/5 rounded-2xl rounded-tl-none p-4 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-2 h-2 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-2 h-2 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: "300ms" }} />
+              <div className="bg-zinc-950/45 border border-white/5 rounded-2xl rounded-tl-none p-4 py-3 flex items-center gap-3">
+                <div className="flex gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: "300ms" }} />
+                </div>
+                <span className="text-xs text-zinc-400 font-mono animate-pulse">{thinkingState}</span>
               </div>
             </motion.div>
           )}
@@ -297,7 +308,7 @@ export function ChatArea({ onMenuClick }: ChatAreaProps) {
       {/* Input Tray */}
       <div className="p-4 md:p-6 bg-gradient-to-t from-black via-black to-transparent">
         <div className="max-w-3xl mx-auto relative">
-          <div className="relative rounded-2xl border border-white/10 bg-zinc-900/60 p-2.5 shadow-2xl backdrop-blur-lg flex flex-col focus-within:border-purple-500/50 focus-within:ring-1 focus-within:ring-purple-500/50 transition-all duration-300">
+          <div className="relative rounded-2xl border border-white/10 bg-zinc-900/40 p-2.5 shadow-[0_0_20px_rgba(0,0,0,0.8)] backdrop-blur-xl flex flex-col hover:border-white/15 focus-within:border-purple-500/50 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:shadow-[0_0_25px_rgba(168,85,247,0.15)] focus-within:-translate-y-0.5 transition-all duration-305">
             <textarea
               ref={textareaRef}
               rows={1}
@@ -334,11 +345,12 @@ export function ChatArea({ onMenuClick }: ChatAreaProps) {
                 onClick={handleSend}
                 disabled={!input.trim() || isStreaming}
                 className={cn(
-                  "p-2 rounded-xl transition-all duration-300 flex items-center justify-center",
+                  "p-2.5 rounded-xl transition-all duration-300 flex items-center justify-center cursor-pointer",
                   input.trim() && !isStreaming
-                    ? "bg-white text-black hover:bg-zinc-200 shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:scale-105"
+                    ? "bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-400 hover:to-blue-400 text-white shadow-[0_0_15px_rgba(168,85,247,0.45)] hover:scale-110 active:scale-95 animate-pulse"
                     : "text-zinc-600 bg-white/5 cursor-not-allowed"
                 )}
+                style={{ animationDuration: "2s" }}
               >
                 {isStreaming ? (
                   <Loader2 className="w-4 h-4 animate-spin text-purple-400" />

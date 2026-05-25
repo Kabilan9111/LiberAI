@@ -14,7 +14,7 @@ export type PersonalityMode =
   | "motivational"
   | "study_coach"
   | "tamil_local"
-  | "uncensored";
+  | "wild";
 
 export type Language =
   | "english"
@@ -24,6 +24,8 @@ export type Language =
   | "kannada"
   | "hindi"
   | "marathi";
+
+export type AIProvider = "auto" | "gemini" | "groq" | "openai" | "openrouter" | "together";
 
 export interface Chat {
   id: string;

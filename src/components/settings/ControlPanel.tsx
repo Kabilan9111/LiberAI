@@ -1,11 +1,12 @@
 "use client";
 
 import { useApp } from "@/context/AppContext";
-import { Sliders, Sparkles, AlertCircle, RefreshCw } from "lucide-react";
+import { Sliders, Sparkles, AlertCircle, RefreshCw, Cpu } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AIProvider } from "@/types";
 
 export function ControlPanel() {
-  const { settings, updateSettings } = useApp();
+  const { settings, updateSettings, selectedProvider, setSelectedProvider } = useApp();
 
   const handleSliderChange = (key: "creativity" | "humor" | "formalCasual", value: number) => {
     updateSettings({ [key]: value });
@@ -30,6 +31,7 @@ export function ControlPanel() {
       formalCasual: 60,
       responsePreset: "balanced",
     });
+    setSelectedProvider("auto");
   };
 
   return (
@@ -46,6 +48,40 @@ export function ControlPanel() {
         >
           <RefreshCw className="w-3.5 h-3.5" /> reset
         </button>
+      </div>
+
+      {/* Orchestration Provider selection */}
+      <div className="space-y-3">
+        <label className="text-xs font-mono text-zinc-500 uppercase tracking-wider block">
+          ORCHESTRATION PROVIDER
+        </label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+          {[
+            { id: "auto", label: "Auto", icon: "🤖" },
+            { id: "gemini", label: "Gemini", icon: "🧠" },
+            { id: "groq", label: "Groq", icon: "⚡" },
+            { id: "openai", label: "OpenAI", icon: "💬" },
+            { id: "openrouter", label: "OpenRouter", icon: "🌐" },
+            { id: "together", label: "Together AI", icon: "🔥" },
+          ].map((p) => {
+            const isSelected = selectedProvider === p.id;
+            return (
+              <button
+                key={p.id}
+                onClick={() => setSelectedProvider(p.id as AIProvider)}
+                className={cn(
+                  "py-3 rounded-xl border text-[10px] font-semibold flex flex-col items-center justify-center gap-1 transition-all duration-300 cursor-pointer",
+                  isSelected
+                    ? "bg-purple-500/10 border-purple-500/50 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.1)]"
+                    : "bg-white/5 border-white/5 hover:bg-white/10 text-zinc-400"
+                )}
+              >
+                <span className="text-base">{p.icon}</span>
+                <span className="truncate max-w-full px-1">{p.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Preset selections */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useApp } from "@/context/AppContext";
-import { PersonalityMode, Language } from "@/types";
+import { PersonalityMode, Language, AIProvider } from "@/types";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -33,7 +33,7 @@ const PERSONALITIES: { id: PersonalityMode; label: string; icon: string }[] = [
   { id: "motivational", label: "Motivational", icon: "💪" },
   { id: "study_coach", label: "Study Coach", icon: "📚" },
   { id: "tamil_local", label: "Tamil Local Mode", icon: "🫡" },
-  { id: "uncensored", label: "Uncensored", icon: "💀" },
+  { id: "wild", label: "Wild Mode", icon: "👁️" },
 ];
 
 const LANGUAGES: { id: Language; label: string }[] = [
@@ -52,6 +52,8 @@ export function Sidebar({ isOpen, setIsOpen, isMobileOpen, setIsMobileOpen }: Si
     activeChatId,
     personalityMode,
     language,
+    selectedProvider,
+    setSelectedProvider,
     setPersonalityMode,
     setLanguage,
     startNewChat,
@@ -135,7 +137,7 @@ export function Sidebar({ isOpen, setIsOpen, isMobileOpen, setIsMobileOpen }: Si
           <div className="grid grid-cols-2 gap-1.5 px-1">
             {PERSONALITIES.map((p) => {
               const isSelected = personalityMode === p.id;
-              const isUncensored = p.id === "uncensored";
+              const isWild = p.id === "wild";
               return (
                 <button
                   key={p.id}
@@ -143,9 +145,9 @@ export function Sidebar({ isOpen, setIsOpen, isMobileOpen, setIsMobileOpen }: Si
                   className={cn(
                     "flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all duration-300 text-xs cursor-pointer",
                     isSelected
-                      ? isUncensored
-                        ? "bg-red-500/10 border-red-500/50 text-red-300 font-semibold shadow-[0_0_12px_rgba(239,68,68,0.2)]"
-                        : "bg-purple-500/10 border-purple-500/50 text-purple-300 font-semibold shadow-[0_0_10px_rgba(168,85,247,0.1)]"
+                      ? isWild
+                        ? "bg-red-500/10 border-red-500/50 text-red-300 font-semibold shadow-[0_0_12px_rgba(239,68,68,0.2)] hover:border-red-500/70"
+                        : "bg-purple-500/10 border-purple-500/50 text-purple-300 font-semibold shadow-[0_0_10px_rgba(168,85,247,0.1)] hover:border-purple-500/70"
                       : "bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10 text-zinc-400"
                   )}
                 >
@@ -174,6 +176,28 @@ export function Sidebar({ isOpen, setIsOpen, isMobileOpen, setIsMobileOpen }: Si
                   {l.label}
                 </option>
               ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Provider Selector */}
+        <div>
+          <div className="flex items-center gap-1 px-2 mb-2 text-xs font-mono tracking-wider text-zinc-500 uppercase">
+            <Brain className="w-3.5 h-3.5 text-purple-400" />
+            <span>ORCHESTRATION PROVIDER</span>
+          </div>
+          <div className="px-1">
+            <select
+              value={selectedProvider}
+              onChange={(e) => setSelectedProvider(e.target.value as AIProvider)}
+              className="w-full bg-white/5 border border-white/10 hover:border-white/20 rounded-xl px-3 py-2 text-xs text-zinc-200 outline-none transition-all cursor-pointer"
+            >
+              <option value="auto" className="bg-zinc-950 text-zinc-200">🤖 Auto Routing</option>
+              <option value="gemini" className="bg-zinc-950 text-zinc-200">🧠 Gemini</option>
+              <option value="groq" className="bg-zinc-950 text-zinc-200">⚡ Groq</option>
+              <option value="openai" className="bg-zinc-950 text-zinc-200">💬 OpenAI</option>
+              <option value="openrouter" className="bg-zinc-950 text-zinc-200">🌐 OpenRouter</option>
+              <option value="together" className="bg-zinc-950 text-zinc-200">🔥 Together AI</option>
             </select>
           </div>
         </div>

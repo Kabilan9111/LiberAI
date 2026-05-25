@@ -183,13 +183,95 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Chat settings setters
   const setPersonalityMode = (mode: PersonalityMode) => {
-    setPersonalityModeState(mode);
-    if (activeChatId) {
-      const updated = chats.map((c) =>
-        c.id === activeChatId ? { ...c, personalityMode: mode } : c
-      );
-      setChats(updated);
-      saveChatsToStorage(updated);
+    const isNewModeWild = mode === "wild";
+    const isCurrentModeWild = personalityMode === "wild";
+
+    if (isNewModeWild && !isCurrentModeWild) {
+      // Switching from Standard to Wild
+      if (activeChatId) {
+        localStorage.setItem("liber_last_standard_chat_id", activeChatId);
+      }
+      
+      const savedWildId = localStorage.getItem("liber_last_wild_chat_id");
+      let targetWildChat = chats.find(c => c.id === savedWildId && c.personalityMode === "wild");
+      
+      if (!targetWildChat) {
+        targetWildChat = chats.find(c => c.personalityMode === "wild");
+      }
+      
+      if (targetWildChat) {
+        setActiveChatId(targetWildChat.id);
+        setPersonalityModeState("wild");
+      } else {
+        const newId = `chat-wild-${Date.now()}`;
+        const newChat: Chat = {
+          id: newId,
+          title: "Wild Dialogue",
+          personalityMode: "wild",
+          language,
+          createdAt: new Date(),
+          messages: [],
+        };
+        const updated = [newChat, ...chats];
+        setChats(updated);
+        setActiveChatId(newId);
+        setPersonalityModeState("wild");
+        saveChatsToStorage(updated);
+        localStorage.setItem("liber_last_wild_chat_id", newId);
+      }
+    } else if (!isNewModeWild && isCurrentModeWild) {
+      // Switching from Wild to Standard
+      if (activeChatId) {
+        localStorage.setItem("liber_last_wild_chat_id", activeChatId);
+      }
+      
+      const savedStandardId = localStorage.getItem("liber_last_standard_chat_id");
+      let targetStandardChat = chats.find(c => c.id === savedStandardId && c.personalityMode !== "wild");
+      
+      if (!targetStandardChat) {
+        targetStandardChat = chats.find(c => c.personalityMode !== "wild");
+      }
+      
+      if (targetStandardChat) {
+        setActiveChatId(targetStandardChat.id);
+        setPersonalityModeState(mode);
+        const updated = chats.map(c => 
+          c.id === targetStandardChat!.id ? { ...c, personalityMode: mode } : c
+        );
+        setChats(updated);
+        saveChatsToStorage(updated);
+      } else {
+        const newId = `chat-std-${Date.now()}`;
+        const newChat: Chat = {
+          id: newId,
+          title: "New Dialogue",
+          personalityMode: mode,
+          language,
+          createdAt: new Date(),
+          messages: [],
+        };
+        const updated = [newChat, ...chats];
+        setChats(updated);
+        setActiveChatId(newId);
+        setPersonalityModeState(mode);
+        saveChatsToStorage(updated);
+        localStorage.setItem("liber_last_standard_chat_id", newId);
+      }
+    } else {
+      // Standard to Standard or Wild to Wild
+      setPersonalityModeState(mode);
+      if (activeChatId) {
+        const updated = chats.map((c) =>
+          c.id === activeChatId ? { ...c, personalityMode: mode } : c
+        );
+        setChats(updated);
+        saveChatsToStorage(updated);
+        if (!isNewModeWild) {
+          localStorage.setItem("liber_last_standard_chat_id", activeChatId);
+        } else {
+          localStorage.setItem("liber_last_wild_chat_id", activeChatId);
+        }
+      }
     }
   };
 
@@ -218,7 +300,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const newId = `chat-${Date.now()}`;
     const newChat: Chat = {
       id: newId,
-      title: "New Dialogue",
+      title: personalityMode === "wild" ? "Wild Dialogue" : "New Dialogue",
       personalityMode,
       language,
       createdAt: new Date(),
@@ -228,6 +310,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setChats(updated);
     setActiveChatId(newId);
     saveChatsToStorage(updated);
+
+    if (personalityMode === "wild") {
+      localStorage.setItem("liber_last_wild_chat_id", newId);
+    } else {
+      localStorage.setItem("liber_last_standard_chat_id", newId);
+    }
+
     return newId;
   };
 
@@ -250,6 +339,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (chat) {
       setPersonalityModeState(chat.personalityMode);
       setLanguageState(chat.language);
+      if (chat.personalityMode === "wild") {
+        localStorage.setItem("liber_last_wild_chat_id", id);
+      } else {
+        localStorage.setItem("liber_last_standard_chat_id", id);
+      }
     }
   };
 

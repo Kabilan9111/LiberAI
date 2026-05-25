@@ -61,6 +61,14 @@ export function Sidebar({ isOpen, setIsOpen, isMobileOpen, setIsMobileOpen }: Si
     selectChat,
   } = useApp();
 
+  const filteredChats = chats.filter((c) => {
+    if (personalityMode === "wild") {
+      return c.personalityMode === "wild";
+    } else {
+      return c.personalityMode !== "wild";
+    }
+  });
+
   const sidebarContent = (
     <div className="flex flex-col h-full bg-zinc-950 border-r border-white/5 text-zinc-300">
       {/* Sidebar Header */}
@@ -86,11 +94,11 @@ export function Sidebar({ isOpen, setIsOpen, isMobileOpen, setIsMobileOpen }: Si
         <div>
           <div className="flex items-center justify-between px-2 mb-2 text-xs font-mono tracking-wider text-zinc-500 uppercase">
             <span>DIALOGUE HISTORY</span>
-            <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded-full border border-white/5 text-zinc-400">{chats.length}</span>
+            <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded-full border border-white/5 text-zinc-400">{filteredChats.length}</span>
           </div>
 
           <div className="space-y-1">
-            {chats.map((chat) => {
+            {filteredChats.map((chat) => {
               const isActive = chat.id === activeChatId;
               return (
                 <div
@@ -110,7 +118,7 @@ export function Sidebar({ isOpen, setIsOpen, isMobileOpen, setIsMobileOpen }: Si
                     <MessageSquare className={cn("w-4 h-4 flex-shrink-0", isActive ? "text-purple-400" : "text-zinc-600")} />
                     <span className="truncate">{chat.title}</span>
                   </div>
-                  {chats.length > 1 && (
+                  {filteredChats.length > 1 && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

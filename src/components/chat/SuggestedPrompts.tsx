@@ -9,24 +9,24 @@ interface SuggestedPromptsProps {
 
 const PROMPTS = [
   {
-    title: "Savage Mode Code",
-    desc: "Ask the AI to write javascript code with attitude.",
-    prompt: "Write a JavaScript function to run an elite engine in savage mode.",
+    title: "Business Strategy",
+    desc: "Analyze unit economics for a startup.",
+    prompt: "Analyze our SaaS unit economics: CAC is $50, ARPU is $15/mo, Churn is 5%.",
   },
   {
-    title: "Tamil Local Guide",
-    desc: "Get study tips in local Tamil dialect.",
-    prompt: "Exam-uku padikka oru guide thanga thala.",
+    title: "Reality Simulation",
+    desc: "Forecast and project risk percentages for a startup launch.",
+    prompt: "Should I launch my tech startup tomorrow or wait for VC interest? Simulate the trajectories.",
   },
   {
-    title: "Romantic Poem",
-    desc: "Request a sweet poem about code and neon lights.",
-    prompt: "Write a romantic poem about coding and purple neon glows.",
+    title: "Director's Scene",
+    desc: "Request a cinematic script scene with screenplay format.",
+    prompt: "Write a short dramatic confrontation scene between two rival hackers in a neon-lit server room.",
   },
   {
-    title: "Weather Vibe",
-    desc: "Check how the climate feels outside.",
-    prompt: "How is the weather outside? Should I study or code?",
+    title: "Savage Critique",
+    desc: "Critique a complex React component in savage roasting style.",
+    prompt: "Critique this React component: it uses three separate useEffects to fetch data and sync state. Be brutally honest.",
   },
 ];
 

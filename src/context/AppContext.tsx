@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import {
   Chat,
-  Message,
+  MessageBlock,
   User,
   PersonalityMode,
   Language,
@@ -25,6 +25,8 @@ interface AppContextType {
   isStreaming: boolean;
   isGeneratingImage: boolean;
   thinkingState: string | null;
+  streamingChatId: string | null;
+  streamingBlockId: string | null;
   personalityMode: PersonalityMode;
   language: Language;
   settings: PersonalitySettings;
@@ -38,10 +40,156 @@ interface AppContextType {
   deleteChat: (id: string) => void;
   selectChat: (id: string) => void;
   sendMessage: (content: string) => Promise<void>;
+  deleteMessageBlock: (blockId: string) => void;
   generateImage: (prompt: string, style: ImageStyle, aspectRatio: AspectRatio) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
+
+function getWelcomeMessage(mode: PersonalityMode): string {
+  switch (mode) {
+    case "study_coach":
+      return "Hello. I am **Liber AI**, your structured study coach. Let's break down concepts step-by-step, review material, and test your understanding using clear outlines and bullet points. 📚";
+    case "business":
+      return "Welcome to Business Mode. I am **Liber AI**, your corporate strategy advisor and startup architect. Let's analyze metrics, develop growth plans, design pitch structures, and scale your operations. 💼";
+    case "director":
+      return "Action. I am **Liber AI** in Director Mode, your screenwriting and cinematic drama pacing partner. Let's write gripping screenplays, outline vivid character arcs, and build immersive cinematic worlds. 🎬";
+    case "content_creator":
+      return "Ready to create? I am **Liber AI**'s Content Creator Mode. Let's draft viral hooks, craft engaging copy, design magnetic headlines, and build high-performance content frameworks for any channel. 🚀";
+    case "reality_engine":
+      return "Initializing simulations. I am the **Reality Engine**. I analyze multi-scenario forecasting models, compute probabilistic risks, and structure base-case, optimistic, and pessimistic projections. Let's simulate your choices. 🌀";
+    case "savage":
+      return "Hey there. I am **Liber AI** in Savage Mode. Ready for some brutally honest, sarcastic, and hilarious replies? Let's see what you've got. 🔥";
+    case "motivational":
+      return "Welcome! I am **Liber AI**, your high-energy personal development and gym coach. Let's push you to succeed, set goals, and build unstoppable discipline today! 💪🔥";
+    case "wild":
+      return "Hello. I am **Liber AI**, your confident, emotionally intelligent, and charismatic partner. Let's explore deep, mature, relationship, or attraction conversations. No preachy limits, just real, mature connection. 👁️";
+    default:
+      return "Hello! I am **Liber AI**, your premium intelligent companion. I am ready to help you.";
+  }
+}
+
+function createInitialWelcomeChat(mode: PersonalityMode, language: Language): Chat {
+  const newId = `welcome-chat-${mode}-${Date.now()}`;
+  let title = "Welcome Session";
+  if (mode === "wild") title = "Wild Dialogue";
+  else if (mode === "business") title = "Business Strategy";
+  else if (mode === "director") title = "Director's Cut";
+  else if (mode === "reality_engine") title = "Simulation Hub";
+
+  return {
+    id: newId,
+    title,
+    personalityMode: mode,
+    language,
+    createdAt: new Date(),
+    messages: [
+      {
+        id: `welcome-msg-${mode}`,
+        userMessage: "",
+        assistantMessage: getWelcomeMessage(mode),
+        timestamp: new Date(),
+        personalityMode: mode,
+      },
+    ],
+  };
+}
+
+function updateModeMemory(mode: PersonalityMode, userMsg: string, assistantMsg: string) {
+  if (typeof window === "undefined") return;
+
+  const storageKey = `liber_memory_${mode}`;
+  let currentMemory = {
+    relationship: "",
+    goals: "",
+    projects: "",
+    historySummary: "",
+  };
+
+  const saved = localStorage.getItem(storageKey);
+  if (saved) {
+    try {
+      currentMemory = { ...currentMemory, ...JSON.parse(saved) };
+    } catch (e) {}
+  }
+
+  // 1. Goal heuristics
+  const goalRegexes = [
+    /(?:my goal is|i want to|trying to|planning to|i need to|aiming to)\s+([^.!?]+)/gi
+  ];
+  for (const regex of goalRegexes) {
+    const match = regex.exec(userMsg);
+    if (match && match[1]) {
+      const extractedGoal = match[1].trim();
+      currentMemory.goals = currentMemory.goals
+        ? `${currentMemory.goals}; ${extractedGoal}`
+        : extractedGoal;
+    }
+  }
+
+  // 2. Project heuristics
+  const projectRegexes = [
+    /(?:i'm building|i'm working on|project is|developing a|coding a|my app is|my website is)\s+([^.!?]+)/gi
+  ];
+  for (const regex of projectRegexes) {
+    const match = regex.exec(userMsg);
+    if (match && match[1]) {
+      const extractedProject = match[1].trim();
+      currentMemory.projects = currentMemory.projects
+        ? `${currentMemory.projects}; ${extractedProject}`
+        : extractedProject;
+    }
+  }
+
+  // 3. Relationship / preference heuristics
+  const preferenceRegexes = [
+    /(?:i prefer|i like|i don't like|i am a|i am an|my background is)\s+([^.!?]+)/gi
+  ];
+  for (const regex of preferenceRegexes) {
+    const match = regex.exec(userMsg);
+    if (match && match[1]) {
+      const extractedPreference = match[1].trim();
+      currentMemory.relationship = currentMemory.relationship
+        ? `${currentMemory.relationship}; ${extractedPreference}`
+        : extractedPreference;
+    }
+  }
+
+  // Keep fields reasonably sized
+  if (currentMemory.goals.length > 500) currentMemory.goals = currentMemory.goals.slice(-500);
+  if (currentMemory.projects.length > 500) currentMemory.projects = currentMemory.projects.slice(-500);
+  if (currentMemory.relationship.length > 500) currentMemory.relationship = currentMemory.relationship.slice(-500);
+
+  // Maintain rolling exchange summary
+  let rollingExchanges: { u: string; a: string }[] = [];
+  const historyKey = `liber_history_rolling_${mode}`;
+  const savedHistory = localStorage.getItem(historyKey);
+  if (savedHistory) {
+    try {
+      rollingExchanges = JSON.parse(savedHistory);
+    } catch (e) {}
+  }
+
+  // Add the new exchange
+  rollingExchanges.push({
+    u: userMsg.length > 100 ? userMsg.substring(0, 97) + "..." : userMsg,
+    a: assistantMsg.length > 150 ? assistantMsg.substring(0, 147) + "..." : assistantMsg,
+  });
+
+  // Limit to last 5
+  if (rollingExchanges.length > 5) {
+    rollingExchanges = rollingExchanges.slice(-5);
+  }
+
+  localStorage.setItem(historyKey, JSON.stringify(rollingExchanges));
+
+  // Build the history summary string
+  currentMemory.historySummary = rollingExchanges
+    .map((ex, idx) => `Exchange ${idx + 1}:\nUser: ${ex.u}\nAssistant: ${ex.a}`)
+    .join("\n\n");
+
+  localStorage.setItem(storageKey, JSON.stringify(currentMemory));
+}
 
 const INITIAL_SETTINGS: PersonalitySettings = {
   creativity: 75,
@@ -84,11 +232,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [thinkingState, setThinkingState] = useState<string | null>(null);
-  const [personalityMode, setPersonalityModeState] = useState<PersonalityMode>("chill");
+  const [streamingChatId, setStreamingChatId] = useState<string | null>(null);
+  const [streamingBlockId, setStreamingBlockId] = useState<string | null>(null);
+  const [personalityMode, setPersonalityModeState] = useState<PersonalityMode>("wild");
   const [language, setLanguageState] = useState<Language>("english");
   const [settings, setSettings] = useState<PersonalitySettings>(INITIAL_SETTINGS);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [selectedProvider, setSelectedProviderState] = useState<AIProvider>("auto");
+
+  // Keep refs up-to-date to prevent stale closure issues in asynchronous callbacks
+  const chatsRef = React.useRef<Chat[]>([]);
+  const activeChatIdRef = React.useRef<string | null>(null);
+
+  useEffect(() => {
+    chatsRef.current = chats;
+  }, [chats]);
+
+  useEffect(() => {
+    activeChatIdRef.current = activeChatId;
+  }, [activeChatId]);
 
   // Load from localStorage on client render
   useEffect(() => {
@@ -102,39 +264,60 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setSelectedProviderState(savedProvider as AIProvider);
     }
 
+    let loadedChats: Chat[] = [];
     const savedChats = localStorage.getItem("liber_chats");
     if (savedChats) {
-      // Parse dates back to Date objects
-      const parsed = JSON.parse(savedChats).map((c: any) => ({
-        ...c,
-        createdAt: new Date(c.createdAt),
-        messages: c.messages.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })),
-      }));
-      setChats(parsed);
-      if (parsed.length > 0) {
-        setActiveChatId(parsed[0].id);
+      try {
+        loadedChats = JSON.parse(savedChats).map((c: any) => ({
+          ...c,
+          createdAt: new Date(c.createdAt),
+          messages: c.messages.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })),
+        }));
+      } catch (e) {
+        console.error("Error parsing chats:", e);
       }
-    } else {
-      // Create initial welcome chat
-      const welcomeChatId = "welcome-chat";
-      const welcomeChat: Chat = {
-        id: welcomeChatId,
-        title: "Introduction to Liber AI",
-        personalityMode: "chill",
-        language: "english",
-        createdAt: new Date(),
-        messages: [
-          {
-            id: "welcome-msg-1",
-            role: "assistant",
-            content: "Hello! I am **Liber AI**, your premium, multilingual intelligent companion. I am tuned to respond in various dialects, personalities, and styles. Feel free to switch my language or personality mode on the left sidebar to see how my tone adjusts!\n\nTo get started, try asking me a question or heading over to the **Image Studio** to generate stunning visuals.",
-            timestamp: new Date(),
-          },
-        ],
-      };
-      setChats([welcomeChat]);
-      setActiveChatId(welcomeChatId);
     }
+
+    // Load active mode
+    const savedMode = (localStorage.getItem("liber_active_mode") as PersonalityMode) || "wild";
+    setPersonalityModeState(savedMode);
+
+    // Load last active chat ID per mode dictionary
+    const savedActiveDict = localStorage.getItem("liber_last_active_chat_ids");
+    let activeDict: Record<PersonalityMode, string | null> = {
+      wild: null,
+      study_coach: null,
+      business: null,
+      director: null,
+      content_creator: null,
+      reality_engine: null,
+      savage: null,
+      motivational: null,
+    };
+    if (savedActiveDict) {
+      try {
+        activeDict = JSON.parse(savedActiveDict);
+      } catch (e) {}
+    }
+
+    // Ensure there is at least one chat for the active mode
+    const chatsForActiveMode = loadedChats.filter((c) => c.personalityMode === savedMode);
+    let currentActiveId = activeDict[savedMode];
+
+    if (chatsForActiveMode.length === 0) {
+      const newWelcome = createInitialWelcomeChat(savedMode, "english");
+      loadedChats.unshift(newWelcome);
+      currentActiveId = newWelcome.id;
+      activeDict[savedMode] = newWelcome.id;
+    } else if (!currentActiveId || !chatsForActiveMode.some((c) => c.id === currentActiveId)) {
+      currentActiveId = chatsForActiveMode[0].id;
+      activeDict[savedMode] = currentActiveId;
+    }
+
+    setChats(loadedChats);
+    setActiveChatId(currentActiveId);
+    localStorage.setItem("liber_last_active_chat_ids", JSON.stringify(activeDict));
+    localStorage.setItem("liber_chats", JSON.stringify(loadedChats));
 
     const savedImages = localStorage.getItem("liber_images");
     if (savedImages) {
@@ -183,96 +366,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Chat settings setters
   const setPersonalityMode = (mode: PersonalityMode) => {
-    const isNewModeWild = mode === "wild";
-    const isCurrentModeWild = personalityMode === "wild";
-
-    if (isNewModeWild && !isCurrentModeWild) {
-      // Switching from Standard to Wild
-      if (activeChatId) {
-        localStorage.setItem("liber_last_standard_chat_id", activeChatId);
-      }
-      
-      const savedWildId = localStorage.getItem("liber_last_wild_chat_id");
-      let targetWildChat = chats.find(c => c.id === savedWildId && c.personalityMode === "wild");
-      
-      if (!targetWildChat) {
-        targetWildChat = chats.find(c => c.personalityMode === "wild");
-      }
-      
-      if (targetWildChat) {
-        setActiveChatId(targetWildChat.id);
-        setPersonalityModeState("wild");
-      } else {
-        const newId = `chat-wild-${Date.now()}`;
-        const newChat: Chat = {
-          id: newId,
-          title: "Wild Dialogue",
-          personalityMode: "wild",
-          language,
-          createdAt: new Date(),
-          messages: [],
-        };
-        const updated = [newChat, ...chats];
-        setChats(updated);
-        setActiveChatId(newId);
-        setPersonalityModeState("wild");
-        saveChatsToStorage(updated);
-        localStorage.setItem("liber_last_wild_chat_id", newId);
-      }
-    } else if (!isNewModeWild && isCurrentModeWild) {
-      // Switching from Wild to Standard
-      if (activeChatId) {
-        localStorage.setItem("liber_last_wild_chat_id", activeChatId);
-      }
-      
-      const savedStandardId = localStorage.getItem("liber_last_standard_chat_id");
-      let targetStandardChat = chats.find(c => c.id === savedStandardId && c.personalityMode !== "wild");
-      
-      if (!targetStandardChat) {
-        targetStandardChat = chats.find(c => c.personalityMode !== "wild");
-      }
-      
-      if (targetStandardChat) {
-        setActiveChatId(targetStandardChat.id);
-        setPersonalityModeState(mode);
-        const updated = chats.map(c => 
-          c.id === targetStandardChat!.id ? { ...c, personalityMode: mode } : c
-        );
-        setChats(updated);
-        saveChatsToStorage(updated);
-      } else {
-        const newId = `chat-std-${Date.now()}`;
-        const newChat: Chat = {
-          id: newId,
-          title: "New Dialogue",
-          personalityMode: mode,
-          language,
-          createdAt: new Date(),
-          messages: [],
-        };
-        const updated = [newChat, ...chats];
-        setChats(updated);
-        setActiveChatId(newId);
-        setPersonalityModeState(mode);
-        saveChatsToStorage(updated);
-        localStorage.setItem("liber_last_standard_chat_id", newId);
-      }
-    } else {
-      // Standard to Standard or Wild to Wild
-      setPersonalityModeState(mode);
-      if (activeChatId) {
-        const updated = chats.map((c) =>
-          c.id === activeChatId ? { ...c, personalityMode: mode } : c
-        );
-        setChats(updated);
-        saveChatsToStorage(updated);
-        if (!isNewModeWild) {
-          localStorage.setItem("liber_last_standard_chat_id", activeChatId);
-        } else {
-          localStorage.setItem("liber_last_wild_chat_id", activeChatId);
-        }
-      }
+    // 1. Get the current last active chat ID per mode dictionary
+    const savedActiveDict = localStorage.getItem("liber_last_active_chat_ids");
+    let activeDict: Record<PersonalityMode, string | null> = {
+      wild: null,
+      study_coach: null,
+      business: null,
+      director: null,
+      content_creator: null,
+      reality_engine: null,
+      savage: null,
+      motivational: null,
+    };
+    if (savedActiveDict) {
+      try {
+        activeDict = JSON.parse(savedActiveDict);
+      } catch (e) {}
     }
+
+    // 2. Save active chat ID for the current mode before switching
+    if (activeChatId) {
+      activeDict[personalityMode] = activeChatId;
+    }
+
+    // 3. Set the new mode state and persist active mode
+    setPersonalityModeState(mode);
+    localStorage.setItem("liber_active_mode", mode);
+
+    // 4. Retrieve or initialize active chat ID for the destination mode
+    let targetChatId = activeDict[mode];
+    const chatsForNewMode = chats.filter((c) => c.personalityMode === mode);
+
+    if (chatsForNewMode.length === 0) {
+      const welcomeChat = createInitialWelcomeChat(mode, language);
+      const updatedChats = [welcomeChat, ...chats];
+      setChats(updatedChats);
+      saveChatsToStorage(updatedChats);
+      targetChatId = welcomeChat.id;
+      activeDict[mode] = welcomeChat.id;
+    } else if (!targetChatId || !chatsForNewMode.some((c) => c.id === targetChatId)) {
+      targetChatId = chatsForNewMode[0].id;
+      activeDict[mode] = targetChatId;
+    }
+
+    // 5. Update state and save dictionary
+    setActiveChatId(targetChatId);
+    localStorage.setItem("liber_last_active_chat_ids", JSON.stringify(activeDict));
   };
 
   const setLanguage = (lang: Language) => {
@@ -298,9 +437,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Chat Management
   const startNewChat = (): string => {
     const newId = `chat-${Date.now()}`;
+    let title = "New Dialogue";
+    if (personalityMode === "wild") title = "Wild Dialogue";
+    else if (personalityMode === "business") title = "Business Strategy";
+    else if (personalityMode === "director") title = "Director's Cut";
+    else if (personalityMode === "reality_engine") title = "Simulation Hub";
+
     const newChat: Chat = {
       id: newId,
-      title: personalityMode === "wild" ? "Wild Dialogue" : "New Dialogue",
+      title,
       personalityMode,
       language,
       createdAt: new Date(),
@@ -311,11 +456,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setActiveChatId(newId);
     saveChatsToStorage(updated);
 
-    if (personalityMode === "wild") {
-      localStorage.setItem("liber_last_wild_chat_id", newId);
-    } else {
-      localStorage.setItem("liber_last_standard_chat_id", newId);
+    const savedActiveDict = localStorage.getItem("liber_last_active_chat_ids");
+    let activeDict: Record<PersonalityMode, string | null> = {
+      wild: null,
+      study_coach: null,
+      business: null,
+      director: null,
+      content_creator: null,
+      reality_engine: null,
+      savage: null,
+      motivational: null,
+    };
+    if (savedActiveDict) {
+      try {
+        activeDict = JSON.parse(savedActiveDict);
+      } catch (e) {}
     }
+    activeDict[personalityMode] = newId;
+    localStorage.setItem("liber_last_active_chat_ids", JSON.stringify(activeDict));
 
     return newId;
   };
@@ -325,10 +483,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setChats(updated);
     saveChatsToStorage(updated);
     if (activeChatId === id) {
-      if (updated.length > 0) {
-        setActiveChatId(updated[0].id);
+      const remainingForMode = updated.filter((c) => c.personalityMode === personalityMode);
+      if (remainingForMode.length > 0) {
+        setActiveChatId(remainingForMode[0].id);
       } else {
-        setActiveChatId(null);
+        // Create initial welcome chat for mode
+        const welcomeChat = createInitialWelcomeChat(personalityMode, language);
+        const newUpdated = [welcomeChat, ...updated];
+        setChats(newUpdated);
+        saveChatsToStorage(newUpdated);
+        setActiveChatId(welcomeChat.id);
       }
     }
   };
@@ -337,47 +501,70 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setActiveChatId(id);
     const chat = chats.find((c) => c.id === id);
     if (chat) {
-      setPersonalityModeState(chat.personalityMode);
       setLanguageState(chat.language);
-      if (chat.personalityMode === "wild") {
-        localStorage.setItem("liber_last_wild_chat_id", id);
-      } else {
-        localStorage.setItem("liber_last_standard_chat_id", id);
+      const savedActiveDict = localStorage.getItem("liber_last_active_chat_ids");
+      let activeDict: Record<PersonalityMode, string | null> = {
+        wild: null,
+        study_coach: null,
+        business: null,
+        director: null,
+        content_creator: null,
+        reality_engine: null,
+        savage: null,
+        motivational: null,
+      };
+      if (savedActiveDict) {
+        try {
+          activeDict = JSON.parse(savedActiveDict);
+        } catch (e) {}
       }
+      activeDict[chat.personalityMode] = id;
+      localStorage.setItem("liber_last_active_chat_ids", JSON.stringify(activeDict));
     }
   };
 
   // Send message calling Gemini API proxy endpoint
   const sendMessage = async (content: string) => {
-    if (!content.trim() || !activeChatId) return;
+    const targetChatId = activeChatId;
+    if (!content.trim() || !targetChatId) return;
 
-    const userMessage: Message = {
-      id: `msg-${Date.now()}-user`,
-      role: "user",
-      content,
+    // Stable tracking for this message block
+    const blockId = `block-${Date.now()}`;
+    const newBlock: MessageBlock = {
+      id: blockId,
+      userMessage: content,
+      assistantMessage: "",
       timestamp: new Date(),
+      personalityMode: personalityMode,
     };
 
-    // Update messages local state
-    const currentChat = chats.find((c) => c.id === activeChatId);
-    if (!currentChat) return;
+    // Capture stable state configurations at the moment of send to prevent race conditions
+    const targetPersonality = personalityMode;
+    const targetLanguage = language;
+    const targetSettings = settings;
+    const targetProvider = selectedProvider;
 
-    const updatedMessages = [...currentChat.messages, userMessage];
+    // Immediately update state functionally to append the block
+    setChats((prevChats) => {
+      const updated = prevChats.map((c) => {
+        if (c.id === targetChatId) {
+          const updatedMessages = [...c.messages, newBlock];
+          let newTitle = c.title;
+          if (c.title === "New Dialogue" && c.messages.length === 0) {
+            newTitle = content.length > 25 ? content.substring(0, 22) + "..." : content;
+          }
+          return { ...c, title: newTitle, messages: updatedMessages };
+        }
+        return c;
+      });
+      localStorage.setItem("liber_chats", JSON.stringify(updated));
+      return updated;
+    });
 
-    // Auto-update title if it was the first message or "New Dialogue"
-    let newTitle = currentChat.title;
-    if (currentChat.title === "New Dialogue" && currentChat.messages.length === 0) {
-      newTitle = content.length > 25 ? content.substring(0, 22) + "..." : content;
-    }
-
-    const updatedChats = chats.map((c) =>
-      c.id === activeChatId ? { ...c, title: newTitle, messages: updatedMessages } : c
-    );
-    setChats(updatedChats);
-    saveChatsToStorage(updatedChats);
-
-    // AI response thinking state sequence
+    // Initialize stream and block status
     setIsStreaming(true);
+    setStreamingChatId(targetChatId);
+    setStreamingBlockId(blockId);
 
     const THINKING_LABELS = [
       "Thinking...",
@@ -404,33 +591,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, 450);
 
     const startStreaming = async () => {
-      // Add temporary empty assistant message for streaming
-      const assistantMessageId = `msg-${Date.now()}-assistant`;
-      const tempAssistantMessage: Message = {
-        id: assistantMessageId,
-        role: "assistant",
-        content: "",
-        timestamp: new Date(),
-      };
+      console.log("=== Frontend sendMessage: Initiating fetch to /api/chat ===");
+      
+      // Get the absolute latest, non-stale chats array using our ref
+      const latestChats = chatsRef.current;
+      const latestChat = latestChats.find((c) => c.id === targetChatId);
+      if (!latestChat) return;
 
-      setChats((prevChats) =>
-        prevChats.map((c) =>
-          c.id === activeChatId
-            ? { ...c, title: newTitle, messages: [...c.messages, tempAssistantMessage] }
-            : c
-        )
+      // Filter history: exclude the active block itself and any welcome messages, ensuring userMessage exists
+      const history = latestChat.messages.filter(
+        (m) => m.id !== blockId && !m.id.startsWith("welcome-") && m.userMessage
       );
 
-      console.log("=== Frontend sendMessage: Initiating fetch to /api/chat ===");
+      let memoryPayload = null;
+      if (typeof window !== "undefined") {
+        const savedMemory = localStorage.getItem(`liber_memory_${targetPersonality}`);
+        if (savedMemory) {
+          try {
+            memoryPayload = JSON.parse(savedMemory);
+          } catch (e) {}
+        }
+      }
+
       const payload = {
         message: content,
-        history: currentChat.messages.filter(m => !m.id.startsWith("welcome-")),
-        personality: personalityMode,
-        language,
-        settings,
-        provider: selectedProvider,
+        history,
+        personality: targetPersonality,
+        language: targetLanguage,
+        settings: targetSettings,
+        provider: targetProvider,
+        memory: memoryPayload,
       };
       console.log("Payload sent from frontend:", JSON.stringify(payload, null, 2));
+
+      let currentText = "";
 
       try {
         const response = await fetch("/api/chat", {
@@ -456,7 +650,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let currentText = "";
 
         console.log("Starting stream read loop...");
         while (true) {
@@ -467,16 +660,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }
 
           const decodedValue = decoder.decode(value, { stream: true });
-          console.log("Frontend read chunk value:", JSON.stringify(decodedValue));
           currentText += decodedValue;
 
+          // Stream directly into the specific block in the correct chat functionally
           setChats((prevChats) =>
             prevChats.map((c) =>
-              c.id === activeChatId
+              c.id === targetChatId
                 ? {
                     ...c,
                     messages: c.messages.map((m) =>
-                      m.id === assistantMessageId ? { ...m, content: currentText } : m
+                      m.id === blockId ? { ...m, assistantMessage: currentText } : m
                     ),
                   }
                 : c
@@ -487,12 +680,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         console.error("AI stream error on frontend:", err);
         setChats((prevChats) =>
           prevChats.map((c) =>
-            c.id === activeChatId
+            c.id === targetChatId
               ? {
                   ...c,
                   messages: c.messages.map((m) =>
-                    m.id === assistantMessageId
-                      ? { ...m, content: `Error: Failed to stream response from Gemini Core. Detail: ${err.message}` }
+                    m.id === blockId
+                      ? { ...m, assistantMessage: `Error: Failed to stream response. Detail: ${err.message}` }
                       : m
                   ),
                 }
@@ -501,14 +694,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         );
       } finally {
         setIsStreaming(false);
+        setStreamingChatId(null);
+        setStreamingBlockId(null);
 
-        // Save actual complete chats list to storage
+        // Save complete chats list to storage functionally
         setChats((finalChats) => {
-          saveChatsToStorage(finalChats);
+          localStorage.setItem("liber_chats", JSON.stringify(finalChats));
           return finalChats;
         });
+
+        if (currentText.trim()) {
+          updateModeMemory(targetPersonality, content, currentText);
+        }
       }
     };
+  };
+
+  const deleteMessageBlock = (blockId: string) => {
+    if (!activeChatId) return;
+    const currentChat = chats.find(c => c.id === activeChatId);
+    if (!currentChat) return;
+
+    const updatedMessages = currentChat.messages.filter(m => m.id !== blockId);
+    const updatedChats = chats.map(c =>
+      c.id === activeChatId ? { ...c, messages: updatedMessages } : c
+    );
+    setChats(updatedChats);
+    saveChatsToStorage(updatedChats);
   };
 
   // Simulate Image Generation
@@ -583,6 +795,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         isStreaming,
         isGeneratingImage,
         thinkingState,
+        streamingChatId,
+        streamingBlockId,
         personalityMode,
         language,
         settings,
@@ -596,6 +810,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         deleteChat,
         selectChat,
         sendMessage,
+        deleteMessageBlock,
         generateImage,
       }}
     >

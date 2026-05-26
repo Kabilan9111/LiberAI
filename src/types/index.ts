@@ -1,20 +1,22 @@
 export type Role = "user" | "assistant";
 
-export interface Message {
+export interface MessageBlock {
   id: string;
-  role: Role;
-  content: string;
+  userMessage: string;
+  assistantMessage: string;
   timestamp: Date;
+  personalityMode: PersonalityMode;
 }
 
 export type PersonalityMode =
-  | "chill"
-  | "savage"
-  | "romantic"
-  | "motivational"
+  | "wild"
   | "study_coach"
-  | "tamil_local"
-  | "wild";
+  | "business"
+  | "director"
+  | "content_creator"
+  | "reality_engine"
+  | "savage"
+  | "motivational";
 
 export type Language =
   | "english"
@@ -30,7 +32,7 @@ export type AIProvider = "auto" | "gemini" | "groq" | "openai" | "openrouter" | 
 export interface Chat {
   id: string;
   title: string;
-  messages: Message[];
+  messages: MessageBlock[];
   personalityMode: PersonalityMode;
   language: Language;
   createdAt: Date;

@@ -9,7 +9,7 @@ export default function ChatPage() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen w-full bg-black overflow-hidden select-none">
+    <div className="flex h-screen w-full overflow-hidden select-none">
       {/* Sidebar (Desktop Collapsible & Mobile Drawer) */}
       <Sidebar
         isOpen={sidebarOpen}

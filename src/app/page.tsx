@@ -19,54 +19,54 @@ import Link from "next/link";
 
 const PERSONALITIES = [
   {
-    mode: "Savage Mode",
-    desc: "Brutally honest, sarcastic, and hilarious replies.",
-    glow: "shadow-[0_0_20px_rgba(239,68,68,0.15)] border-red-500/20 hover:border-red-500/50",
-    textGlow: "text-red-400",
-    bg: "bg-red-500/5",
-    icon: "🔥",
+    mode: "Director Mode",
+    desc: "Cinematic writers, screenwriters, and dramatic pacing creators.",
+    glow: "shadow-[0_0_20px_rgba(245,158,11,0.15)] border-amber-500/20 hover:border-amber-500/50",
+    textGlow: "text-amber-400",
+    bg: "bg-amber-500/5",
+    icon: "🎬",
   },
   {
-    mode: "Tamil Local Mode",
-    desc: "Colloquial Tanglish & Tamil script, packed with local vibe.",
-    glow: "shadow-[0_0_20px_rgba(168,85,247,0.15)] border-purple-500/20 hover:border-purple-500/50",
-    textGlow: "text-purple-400",
-    bg: "bg-purple-500/5",
-    icon: "🫡",
-  },
-  {
-    mode: "Chill Mode",
-    desc: "A relaxed, laid-back buddy for casual conversations.",
-    glow: "shadow-[0_0_20px_rgba(59,130,246,0.15)] border-blue-500/20 hover:border-blue-500/50",
-    textGlow: "text-blue-400",
-    bg: "bg-blue-500/5",
-    icon: "☕",
-  },
-  {
-    mode: "Motivational",
-    desc: "High energy, goal-driven, and supportive coach.",
+    mode: "Reality Engine",
+    desc: "Multi-scenario outcome forecasting and risk percentage simulation.",
     glow: "shadow-[0_0_20px_rgba(16,185,129,0.15)] border-emerald-500/20 hover:border-emerald-500/50",
     textGlow: "text-emerald-400",
     bg: "bg-emerald-500/5",
-    icon: "💪",
+    icon: "🌀",
+  },
+  {
+    mode: "Business Mode",
+    desc: "Corporate strategic advice, VC frameworks, and unit economics.",
+    glow: "shadow-[0_0_20px_rgba(6,182,212,0.15)] border-cyan-500/20 hover:border-cyan-500/50",
+    textGlow: "text-cyan-400",
+    bg: "bg-cyan-500/5",
+    icon: "💼",
+  },
+  {
+    mode: "Wild Mode",
+    desc: "Emotionally adaptive, mature, and psychologically complex conversation.",
+    glow: "shadow-[0_0_20px_rgba(217,70,239,0.15)] border-fuchsia-500/20 hover:border-fuchsia-500/50",
+    textGlow: "text-fuchsia-400",
+    bg: "bg-fuchsia-500/5",
+    icon: "👁️",
   },
 ];
 
 const SIMULATED_PROMPTS = [
   {
-    lang: "English (Savage)",
-    prompt: "Is coding hard or am I just bad?",
-    response: "A bit of both, honestly. But mostly the second one. Don't worry, even basic copy-pasters make it sometimes. Just keep hitting Ctrl+C. 😂",
+    lang: "Director Mode",
+    prompt: "Write a short dramatic confrontation scene in a rainy alleyway.",
+    response: "EXT. ALLEYWAY - NIGHT\n\nRain drums against steel bins. LEO raises his hands, water dripping from his chin.\n\nLEO: 'You don't have to do this, Marcus.'\n\nMarcus steps forward, face shrouded by his trench coat.\n\nMARCUS: 'We crossed that line miles ago, Leo.'",
   },
   {
-    lang: "Tamil (Local Mode)",
-    prompt: "Exam-uku padikka oru guide thanga thala.",
-    response: "Enna thala! 🫡 Simple plan tharren. Tea-a kudi, phone-a side-la vei, 2 mani neram full focus podu. Namma mass kaatrom! 🔥",
+    lang: "Reality Engine",
+    prompt: "Should I launch my tech startup tomorrow or wait for VC interest?",
+    response: "SIMULATING TRAJECTORIES...\n\n- **Base Path (60%)**: Launching tomorrow builds direct market feedback. Likely trajectory: slow initial signups, but faster product iteration.\n- **Optimistic Path (15%)**: Viral organic reach, early customer revenue.\n- **Pessimistic Path (25%)**: Silent launch with zero acquisition, leading to stagnation. Recommendation: Launch tomorrow.",
   },
   {
-    lang: "Hindi (Chill Mode)",
-    prompt: "I need to learn react in 2 days.",
-    response: "Arey bhai, itna tension mat lo. Don't stress out. Focus on components and hooks. React is super fun when you take it easy! ✌️",
+    lang: "Business Mode",
+    prompt: "Analyze our SaaS unit economics: CAC is $50, ARPU is $15/mo, Churn is 5%.",
+    response: "SWOT & METRICS ANALYSIS:\n\n1. **LTV (Lifetime Value)**: $15 / 0.05 = $300.\n2. **LTV:CAC Ratio**: $300 : $50 = 6:1 (Excellent, target is >3:1).\n3. **Payback Period**: $50 / $15 = 3.3 months.\n\nRecommendation: Aggressively scale acquisition channels; your unit economics are highly profitable.",
   },
 ];
 
@@ -379,7 +379,7 @@ export default function Home() {
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-center gap-2 text-sm text-zinc-400">
                     <CheckCircle2 className="w-4 h-4 text-purple-400" />
-                    Access to Chill & Study Coach modes
+                    Access to Study Coach & Savage modes
                   </li>
                   <li className="flex items-center gap-2 text-sm text-zinc-400">
                     <CheckCircle2 className="w-4 h-4 text-purple-400" />
@@ -411,7 +411,7 @@ export default function Home() {
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-center gap-2 text-sm text-zinc-300">
                     <CheckCircle2 className="w-4 h-4 text-purple-400" />
-                    All 6 Persona modes (Savage + Tamil)
+                    All 8 premium personality modes
                   </li>
                   <li className="flex items-center gap-2 text-sm text-zinc-300">
                     <CheckCircle2 className="w-4 h-4 text-purple-400" />
@@ -492,7 +492,7 @@ export default function Home() {
             <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-purple-600 to-blue-500 flex items-center justify-center text-[10px] text-white">L</div>
             <span className="font-space font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">LIBER AI</span>
           </div>
-          <p className="text-xs text-zinc-600">&copy; {new Date().getFullYear()} Liber AI Corp. Futuristic Multilingual Interfaces. All rights reserved.</p>
+          <p className="text-xs text-zinc-600">&copy; 2026 Liber AI Corp. Futuristic Multilingual Interfaces. All rights reserved.</p>
         </div>
       </footer>
     </div>

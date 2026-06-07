@@ -9,6 +9,7 @@ interface AIConsciousnessOrbProps {
   mode: PersonalityMode;
   isStreaming: boolean;
   isThinking: boolean;
+  size?: "sm" | "md";
 }
 
 const ORB_THEMES: Record<PersonalityMode, { gradient: string; glow: string; shadow: string }> = {
@@ -54,7 +55,7 @@ const ORB_THEMES: Record<PersonalityMode, { gradient: string; glow: string; shad
   },
 };
 
-export function AIConsciousnessOrb({ mode, isStreaming, isThinking }: AIConsciousnessOrbProps) {
+export function AIConsciousnessOrb({ mode, isStreaming, isThinking, size = "md" }: AIConsciousnessOrbProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -69,12 +70,12 @@ export function AIConsciousnessOrb({ mode, isStreaming, isThinking }: AIConsciou
   const isActive = isStreaming || isThinking;
 
   return (
-    <div className="relative flex items-center justify-center w-12 h-12">
+    <div className={cn("relative flex items-center justify-center", size === "sm" ? "w-8 h-8" : "w-12 h-12")}>
       {/* Outer Glow Halo */}
       <motion.div
         animate={{
-          scale: isActive ? [1, 1.4, 1] : [1, 1.15, 1],
-          opacity: isActive ? [0.4, 0.85, 0.4] : [0.3, 0.5, 0.3],
+          scale: isThinking ? [1, 1.6, 1] : isActive ? [1, 1.3, 1] : [1, 1.1, 1],
+          opacity: isThinking ? [0.6, 1, 0.6] : isActive ? [0.4, 0.7, 0.4] : [0.2, 0.4, 0.2],
         }}
         transition={{
           duration: isActive ? 1.5 : 3,
@@ -92,7 +93,7 @@ export function AIConsciousnessOrb({ mode, isStreaming, isThinking }: AIConsciou
           repeat: Infinity,
           ease: "linear",
         }}
-        className="absolute w-10 h-10 border border-dashed border-white/10 rounded-full"
+        className={cn("absolute border border-dashed border-white/10 rounded-full", size === "sm" ? "w-7 h-7" : "w-10 h-10")}
       />
 
       {/* Orbiting Ring 2 */}
@@ -103,7 +104,7 @@ export function AIConsciousnessOrb({ mode, isStreaming, isThinking }: AIConsciou
           repeat: Infinity,
           ease: "linear",
         }}
-        className="absolute w-8 h-8 border border-white/5 rounded-full"
+        className={cn("absolute border border-white/5 rounded-full", size === "sm" ? "w-5 h-5" : "w-8 h-8")}
       />
 
       {/* Dynamic Main Core */}
@@ -120,7 +121,8 @@ export function AIConsciousnessOrb({ mode, isStreaming, isThinking }: AIConsciou
           ease: "easeInOut",
         }}
         className={cn(
-          "w-6 h-6 bg-gradient-to-tr z-10 border border-white/20",
+          "bg-gradient-to-tr z-10 border border-white/20",
+          size === "sm" ? "w-4 h-4" : "w-6 h-6",
           theme.gradient,
           theme.shadow
         )}
@@ -132,7 +134,7 @@ export function AIConsciousnessOrb({ mode, isStreaming, isThinking }: AIConsciou
           opacity: isActive ? [0.6, 1, 0.6] : 0.8,
         }}
         transition={{ duration: 1, repeat: Infinity }}
-        className="absolute w-1.5 h-1.5 rounded-full bg-white z-20 shadow-[0_0_8px_rgba(255,255,255,1)]"
+        className={cn("absolute rounded-full bg-white z-20 shadow-[0_0_8px_rgba(255,255,255,1)]", size === "sm" ? "w-1 h-1" : "w-1.5 h-1.5")}
       />
     </div>
   );

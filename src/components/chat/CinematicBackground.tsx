@@ -37,50 +37,50 @@ const BACKGROUND_ASSETS: Record<PersonalityMode, string> = {
 
 const THEME_CONFIGS: Record<PersonalityMode, ThemeConfig> = {
   wild: {
-    gradient: "radial-gradient(circle at 50% 50%, rgba(217, 70, 239, 0.08) 0%, transparent 70%)",
-    particleColor: "rgba(217, 70, 239, 0.25)",
+    gradient: "radial-gradient(circle at 50% 50%, rgba(217, 70, 239, 0.05) 0%, transparent 80%)",
+    particleColor: "rgba(217, 70, 239, 0.2)",
     gridOpacity: 0.015,
     ambientGlow: "rgba(217, 70, 239, 0.03)",
   },
   study_coach: {
-    gradient: "radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 70%)",
-    particleColor: "rgba(99, 102, 241, 0.25)",
+    gradient: "radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.05) 0%, transparent 80%)",
+    particleColor: "rgba(99, 102, 241, 0.2)",
     gridOpacity: 0.02,
     ambientGlow: "rgba(99, 102, 241, 0.03)",
   },
   business: {
-    gradient: "radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.08) 0%, transparent 70%)",
-    particleColor: "rgba(6, 182, 212, 0.25)",
+    gradient: "radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 80%)",
+    particleColor: "rgba(6, 182, 212, 0.2)",
     gridOpacity: 0.03,
     ambientGlow: "rgba(6, 182, 212, 0.03)",
   },
   director: {
-    gradient: "radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.06) 0%, transparent 70%)",
-    particleColor: "rgba(245, 158, 11, 0.2)",
+    gradient: "radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.04) 0%, transparent 80%)",
+    particleColor: "rgba(245, 158, 11, 0.15)",
     gridOpacity: 0.025,
     ambientGlow: "rgba(245, 158, 11, 0.03)",
   },
   content_creator: {
-    gradient: "radial-gradient(circle at 50% 50%, rgba(244, 63, 94, 0.08) 0%, transparent 70%)",
-    particleColor: "rgba(244, 63, 94, 0.25)",
+    gradient: "radial-gradient(circle at 50% 50%, rgba(244, 63, 94, 0.05) 0%, transparent 80%)",
+    particleColor: "rgba(244, 63, 94, 0.2)",
     gridOpacity: 0.02,
     ambientGlow: "rgba(244, 63, 94, 0.03)",
   },
   reality_engine: {
-    gradient: "radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.08) 0%, transparent 70%)",
-    particleColor: "rgba(16, 185, 129, 0.25)",
+    gradient: "radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 80%)",
+    particleColor: "rgba(16, 185, 129, 0.2)",
     gridOpacity: 0.04,
     ambientGlow: "rgba(16, 185, 129, 0.03)",
   },
   savage: {
-    gradient: "radial-gradient(circle at 50% 50%, rgba(220, 38, 38, 0.08) 0%, transparent 70%)",
-    particleColor: "rgba(220, 38, 38, 0.25)",
+    gradient: "radial-gradient(circle at 50% 50%, rgba(220, 38, 38, 0.05) 0%, transparent 80%)",
+    particleColor: "rgba(220, 38, 38, 0.2)",
     gridOpacity: 0.025,
     ambientGlow: "rgba(220, 38, 38, 0.03)",
   },
   motivational: {
-    gradient: "radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 70%)",
-    particleColor: "rgba(139, 92, 246, 0.25)",
+    gradient: "radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.05) 0%, transparent 80%)",
+    particleColor: "rgba(139, 92, 246, 0.2)",
     gridOpacity: 0.02,
     ambientGlow: "rgba(139, 92, 246, 0.03)",
   },
@@ -133,7 +133,7 @@ export function CinematicBackground({ mode }: CinematicBackgroundProps) {
         />
       </AnimatePresence>
 
-      {/* Layer 2: Atmospheric Nebula Colors */}
+      {/* Layer 2: Atmospheric Nebula Colors & Volumetric Fog */}
       <AnimatePresence mode="popLayout">
         <motion.div
           key={`nebula-${mode}`}
@@ -143,6 +143,38 @@ export function CinematicBackground({ mode }: CinematicBackgroundProps) {
           transition={{ duration: 1.2 }}
           style={{ backgroundImage: currentTheme.gradient }}
           className="absolute inset-0 w-full h-full"
+        />
+        {/* Animated Volumetric Fog Drift 1 */}
+        <motion.div
+          key={`fog-1-${mode}`}
+          initial={{ opacity: 0 }}
+          animate={{
+            opacity: 0.2,
+            x: ["-5%", "5%", "-2%", "-5%"],
+            y: ["-5%", "2%", "5%", "-5%"],
+          }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute -inset-1/4 w-[150%] h-[150%] blur-[120px] pointer-events-none mix-blend-screen"
+          style={{
+            background: `radial-gradient(circle at 40% 40%, ${currentTheme.ambientGlow} 0%, transparent 50%)`,
+          }}
+        />
+        {/* Animated Volumetric Fog Drift 2 */}
+        <motion.div
+          key={`fog-2-${mode}`}
+          initial={{ opacity: 0 }}
+          animate={{
+            opacity: 0.15,
+            x: ["5%", "-5%", "2%", "5%"],
+            y: ["5%", "-2%", "-5%", "5%"],
+          }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="absolute -inset-1/4 w-[150%] h-[150%] blur-[140px] pointer-events-none mix-blend-screen"
+          style={{
+            background: `radial-gradient(circle at 60% 60%, ${currentTheme.particleColor} 0%, transparent 50%)`,
+          }}
         />
       </AnimatePresence>
 

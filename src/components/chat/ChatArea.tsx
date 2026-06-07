@@ -23,6 +23,7 @@ export function ChatArea({ onMenuClick }: ChatAreaProps) {
     sendMessage,
     deleteMessageBlock,
     isStreaming,
+    isGeneratingAudio,
     thinkingState,
     personalityMode,
     streamingChatId,
@@ -134,6 +135,7 @@ export function ChatArea({ onMenuClick }: ChatAreaProps) {
               <MessageViewport
                 activeChat={activeChat}
                 isStreaming={isStreaming}
+                isGeneratingAudio={isGeneratingAudio}
                 streamingChatId={streamingChatId}
                 streamingBlockId={streamingBlockId}
                 thinkingState={thinkingState}

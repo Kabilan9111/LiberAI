@@ -26,6 +26,9 @@ import {
 import { Chat, PersonalityMode } from "@/types";
 import { cn } from "@/lib/utils";
 import { SuggestedPrompts } from "./SuggestedPrompts";
+import { AIConsciousnessOrb } from "./AIConsciousnessOrb";
+import { AIThinkingWave } from "./AIThinkingWave";
+import { CinematicAudioPlayer } from "./CinematicAudioPlayer";
 
 interface MessageViewportProps {
   activeChat: Chat | undefined;
@@ -33,6 +36,7 @@ interface MessageViewportProps {
   streamingChatId: string | null;
   streamingBlockId: string | null;
   thinkingState: string | null;
+  isGeneratingAudio?: boolean;
   deleteMessageBlock: (id: string) => void;
   setInput: (val: string) => void;
   personalityMode: PersonalityMode;
@@ -213,6 +217,7 @@ export function MessageViewport({
   streamingChatId,
   streamingBlockId,
   thinkingState,
+  isGeneratingAudio,
   deleteMessageBlock,
   setInput,
   personalityMode,
@@ -280,10 +285,7 @@ export function MessageViewport({
                   {block.userMessage && (
                     <div className="flex gap-4 items-start justify-end">
                       <div
-                        style={{
-                          boxShadow: `0 4px 30px rgba(0, 0, 0, 0.4), 0 0 15px ${colors.shadowColor}`,
-                        }}
-                        className="max-w-[85%] rounded-2xl p-4.5 text-sm border border-white/5 bg-zinc-950/20 backdrop-blur-3xl rounded-tr-none text-zinc-100 flex flex-col items-end gap-1.5"
+                        className="max-w-[85%] rounded-2xl p-4 text-sm border-r-2 border-white/10 bg-white/[0.02] backdrop-blur-sm text-zinc-100 flex flex-col items-end gap-1.5"
                       >
                         <div className="whitespace-pre-wrap select-text leading-relaxed">{block.userMessage}</div>
                         <div className="text-[9px] font-mono text-zinc-500 flex items-center gap-1 mt-0.5 select-none">
@@ -292,91 +294,115 @@ export function MessageViewport({
                               ? new Date(block.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                               : ""}
                           </span>
-                          <span className={colors.text}>✓</span>
+                          <span className="opacity-50 mx-0.5">•</span>
+                          {block.isAudio ? "Cinematic Synthesis" : "Neural transmission"}
                         </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Assistant response block */}
-                  {block.assistantMessage || isThisBlockStreaming ? (
+                {/* Assistant Box */}
+                <div className="flex flex-col gap-2 relative">
+                  {(block.assistantMessage || block.isAudio || isThisBlockStreaming) ? (
                     <div className="flex gap-4.5 items-start justify-start">
-                      {/* Floating holographic mini orb representing AI presence */}
-                      <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center relative overflow-hidden select-none">
-                        <div className={cn("absolute inset-0 rounded-full blur-[4px] opacity-50 animate-pulse", colors.bg)} />
-                        <div className={cn("w-4 h-4 rounded-full z-10 border border-white/20 bg-gradient-to-tr shadow-lg", colors.gradient)} />
+                      <div className="z-10 relative">
+                        <AIConsciousnessOrb mode={personalityMode} isStreaming={isThisBlockStreaming} isThinking={(!block.assistantMessage && !block.isAudio)} size="sm" />
                       </div>
 
-                      <div
-                        style={{
-                          boxShadow: `0 4px 30px rgba(0,0,0,0.5), 0 0 25px ${colors.shadowColor}`,
-                        }}
-                        className={cn(
-                          "max-w-[85%] rounded-2xl p-5 text-sm border bg-zinc-950/20 backdrop-blur-3xl rounded-tl-none text-zinc-200",
-                          colors.border
-                        )}
-                      >
-                        <span className={cn("text-[9px] font-mono font-bold tracking-wider mb-2 block uppercase select-none", colors.text)}>
-                          Liber AI
-                        </span>
-                        
-                        {block.assistantMessage ? (
-                          <Markdown content={block.assistantMessage} />
-                        ) : (
-                          <span className="text-zinc-500 italic flex items-center gap-2">
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Compiling...
+                      {(block.assistantMessage || block.isAudio) ? (
+                        <div className="relative group/message max-w-[85%] z-0">
+                          <div
+                            className={cn(
+                              "relative p-4 text-sm border-l-2 bg-transparent text-zinc-200 transition-all duration-500",
+                              colors.border.replace("border-", "border-l-"),
+                              "hover:bg-white/[0.02] rounded-r-2xl"
+                            )}
+                          >
+                          <span className={cn("text-[9px] font-mono font-bold tracking-wider mb-2 block uppercase select-none", colors.text)}>
+                            Liber AI
                           </span>
-                        )}
-                        {showCursor && (
-                          <span className={cn("inline-block ml-1 font-bold animate-pulse text-base", colors.text)}>
-                            ▋
-                          </span>
-                        )}
+                          
+                          {block.isAudio && block.audioUrl ? (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}
+                              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                              transition={{ duration: 0.8, ease: "easeOut" }}
+                              className="mb-3"
+                            >
+                              <CinematicAudioPlayer src={block.audioUrl} accentGlow={colors.shadowColor} />
+                            </motion.div>
+                          ) : null}
 
-                        {/* Interactive utilities toolbar matching mockup */}
-                        <div className="flex items-center gap-4.5 mt-4 pt-3.5 border-t border-white/5 text-zinc-500 select-none">
-                          <button
-                            onClick={() => block.assistantMessage && navigator.clipboard.writeText(block.assistantMessage)}
-                            className="hover:text-zinc-300 transition-colors p-0.5 cursor-pointer"
-                            title="Copy output"
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            className="hover:text-zinc-300 transition-colors p-0.5 cursor-pointer"
-                            title="Regenerate"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            className="hover:text-zinc-300 transition-colors p-0.5 cursor-pointer"
-                            title="Voice Speak"
-                          >
-                            <Volume2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            className="hover:text-zinc-300 transition-colors p-0.5 cursor-pointer"
-                            title="Like"
-                          >
-                            <ThumbsUp className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            className="hover:text-zinc-300 transition-colors p-0.5 cursor-pointer"
-                            title="Dislike"
-                          >
-                            <ThumbsDown className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            className="hover:text-zinc-300 transition-colors p-0.5 cursor-pointer"
-                            title="Add to Favorite"
-                          >
-                            <Star className="w-3.5 h-3.5" />
-                          </button>
+                          {block.assistantMessage ? (
+                            <motion.div
+                              initial={isThisBlockStreaming ? { opacity: 0 } : { opacity: 1 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ duration: 0.8, ease: "easeOut" }}
+                            >
+                              <Markdown content={block.assistantMessage} />
+                            </motion.div>
+                          ) : null}
+                          
+                          {showCursor && (
+                            <span className={cn("inline-block ml-1 font-bold animate-pulse text-base", colors.text)}>
+                              ▋
+                            </span>
+                          )}
+
+                          {/* Interactive utilities toolbar */}
+                          <div className="flex items-center gap-4.5 mt-4 pt-3.5 border-t border-white/5 text-zinc-500 select-none opacity-0 group-hover/message:opacity-100 transition-opacity duration-300">
+                            {block.assistantMessage && (
+                              <button
+                                onClick={() => navigator.clipboard.writeText(block.assistantMessage)}
+                                className="hover:text-zinc-300 transition-colors p-0.5 cursor-pointer"
+                                title="Copy output"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            <button
+                              className="hover:text-zinc-300 transition-colors p-0.5 cursor-pointer"
+                              title="Regenerate"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              className="hover:text-zinc-300 transition-colors p-0.5 cursor-pointer"
+                              title="Voice Speak"
+                            >
+                              <Volume2 className="w-3.5 h-3.5" />
+                            </button>
+                            <div className="flex-1" />
+                            <button
+                              className="hover:text-zinc-300 transition-colors p-0.5 cursor-pointer"
+                              title="Like"
+                            >
+                              <ThumbsUp className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              className="hover:text-zinc-300 transition-colors p-0.5 cursor-pointer"
+                              title="Dislike"
+                            >
+                              <ThumbsDown className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              className="hover:text-zinc-300 transition-colors p-0.5 cursor-pointer"
+                              title="Add to Favorite"
+                            >
+                              <Star className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="-ml-4 mt-1 z-0">
+                        <AIThinkingWave mode={personalityMode} isResolved={!isThisBlockStreaming} />
+                      </div>
+                    )}
+                  </div>
                   ) : null}
-                </motion.div>
+                </div>
+              </motion.div>
               );
             })}
           </AnimatePresence>

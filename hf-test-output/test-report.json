@@ -1,0 +1,47 @@
+[
+  {
+    "name": "Realistic Vision V5",
+    "model": "SG161222/Realistic_Vision_V5.1_noVAE",
+    "prompt": "Professional portrait of a confident businesswoman, dark office background, cinematic lighting, DSLR photograph, sharp focus",
+    "status": "PASS",
+    "httpStatus": 200,
+    "generationTime": 2401,
+    "imageSize": "222.9KB",
+    "imageBytes": 228279,
+    "contentType": "image/jpeg",
+    "enhancedPrompt": "photorealistic, hyperrealistic, Professional portrait of a confident businesswoman, dark office background, cinematic lighting, DSLR photograph, sharp focus, photorealistic, RAW photo, DSLR, 8k uhd, sharp focus, professional photography, cinematic lighting, hyperrealistic",
+    "error": null,
+    "pass": true,
+    "savedPath": "hf-test-output\\realistic_vision_v5.jpg"
+  },
+  {
+    "name": "DreamShaper",
+    "model": "Lykon/DreamShaper",
+    "prompt": "Epic fantasy castle on a floating island above the clouds, golden hour, magical aurora sky, concept art, highly detailed",
+    "status": "PASS",
+    "httpStatus": 200,
+    "generationTime": 1388,
+    "imageSize": "196.5KB",
+    "imageBytes": 201228,
+    "contentType": "image/jpeg",
+    "enhancedPrompt": "fantasy art, ethereal, magical atmosphere, Epic fantasy castle on a floating island above the clouds, golden hour, magical aurora sky, concept art, highly detailed, fantasy digital painting, artstation, concept art, sharp focus, vibrant colors, intricate details, by Greg Rutkowski",
+    "error": null,
+    "pass": true,
+    "savedPath": "hf-test-output\\dreamshaper.jpg"
+  },
+  {
+    "name": "Pony Diffusion",
+    "model": "AstraliteHeart/pony-diffusion",
+    "prompt": "Cute anime girl with silver hair and emerald eyes, cherry blossom park background, vibrant colors, sharp illustration",
+    "status": "PASS",
+    "httpStatus": 200,
+    "generationTime": 1550,
+    "imageSize": "402.6KB",
+    "imageBytes": 412224,
+    "contentType": "image/jpeg",
+    "enhancedPrompt": "anime style, manga illustration, Cute anime girl with silver hair and emerald eyes, cherry blossom park background, vibrant colors, sharp illustration, anime illustration, manga style, vibrant colors, cel shading, sharp lines, studio quality, Japanese animation",
+    "error": null,
+    "pass": true,
+    "savedPath": "hf-test-output\\pony_diffusion.jpg"
+  }
+]

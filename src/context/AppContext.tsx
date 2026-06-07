@@ -24,6 +24,7 @@ interface AppContextType {
   activeChat: Chat | undefined;
   isStreaming: boolean;
   isGeneratingImage: boolean;
+  isGeneratingAudio: boolean;
   thinkingState: string | null;
   streamingChatId: string | null;
   streamingBlockId: string | null;
@@ -42,6 +43,7 @@ interface AppContextType {
   sendMessage: (content: string) => Promise<void>;
   deleteMessageBlock: (blockId: string) => void;
   generateImage: (prompt: string, style: ImageStyle, aspectRatio: AspectRatio) => Promise<void>;
+  setGeneratedImages: React.Dispatch<React.SetStateAction<GeneratedImage[]>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -231,6 +233,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [thinkingState, setThinkingState] = useState<string | null>(null);
   const [streamingChatId, setStreamingChatId] = useState<string | null>(null);
   const [streamingBlockId, setStreamingBlockId] = useState<string | null>(null);
@@ -561,7 +564,165 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
 
-    // Initialize stream and block status
+function detectMusicIntent(prompt: string): boolean {
+  const normalized = prompt.toLowerCase();
+  
+  const explicitPhrases = [
+    "generate music",
+    "create soundtrack",
+    "make a track",
+    "ultrafunk soundtrack",
+    "horror ambience",
+    "cinematic soundtrack",
+    "phonk music",
+    "background score",
+    "compose music",
+    "generate audio",
+    "dark phonk",
+    "montagem",
+    "horror phonk",
+    "make music",
+    "create music",
+    "generate a song",
+    "generate song",
+    "gym music",
+    "workout music",
+    "make beats",
+  ];
+  
+  if (explicitPhrases.some(phrase => normalized.includes(phrase))) {
+    return true;
+  }
+  
+  const hasMusicNoun = /(soundtrack|music|song|track|ambience|score|audio|beats|melody|bpm)/.test(normalized);
+  const hasActionVerb = /(generate|make|create|compose|produce|play)/.test(normalized);
+  const hasSpecificMusicTypes = /(ultrafunk|phonk|synthwave|orchestral|lo-fi|lofi|ambient|soundscape|montagem|trap|bass)/.test(normalized);
+  
+  return hasMusicNoun && (hasActionVerb || hasSpecificMusicTypes);
+}
+
+// Extract duration in seconds from user message (e.g. "30 seconds", "1 minute", "128s", "2min")
+function extractDuration(prompt: string): number {
+  const normalized = prompt.toLowerCase();
+  // Minutes first (higher priority: "2 minutes" > "2")
+  const minMatch = normalized.match(/(\d+)\s*(?:minutes?|mins?|m\b)/);
+  if (minMatch) return Math.min(parseInt(minMatch[1]) * 60, 120);
+  // Seconds with explicit unit
+  const secMatch = normalized.match(/(\d+)\s*(?:seconds?|secs?|s\b)/);
+  if (secMatch) return Math.min(parseInt(secMatch[1]), 120);
+  // Bare large number likely intended as seconds (e.g. "generate 60")
+  const bareNumMatch = normalized.match(/\b(\d{2,3})\b/);
+  if (bareNumMatch) {
+    const n = parseInt(bareNumMatch[1]);
+    if (n >= 10 && n <= 120) return n;
+  }
+  return 30; // default 30 seconds — one full musicgen-small chunk
+}
+
+
+    // Detect intent for audio generation
+    const isAudioRequest = detectMusicIntent(content.trim());
+
+    if (isAudioRequest) {
+      // Guard: if audio is already being generated, do not fire a second request
+      if (isGeneratingAudio) {
+        console.log("[Audio] Request skipped — generation already in progress.");
+        return;
+      }
+
+      setIsGeneratingAudio(true);
+      setStreamingChatId(targetChatId);
+      setStreamingBlockId(blockId);
+      setThinkingState("Initializing neural composition...");
+
+      const generateAudio = async () => {
+        console.log("Music intent detected for prompt:", content);
+        console.log("Calling generate-music route");
+        try {
+          const abortController = new AbortController();
+          const timeoutId = setTimeout(() => {
+            abortController.abort();
+          }, 1800000); // 30-minute strict timeout
+
+          // Stage 2
+          setTimeout(() => setThinkingState("Building atmospheric layers..."), 15000);
+          // Stage 3
+          setTimeout(() => setThinkingState("Synthesizing cinematic structure..."), 30000);
+          // Stage 4
+          setTimeout(() => setThinkingState("Generating Audio... (this may take a few minutes)"), 60000);
+          // Stage 5
+          setTimeout(() => setThinkingState("Rendering complex waveforms..."), 120000);
+          // Stage 6
+          setTimeout(() => setThinkingState("Finalizing cinematic output..."), 180000);
+
+          const response = await fetch("/api/generate-music", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              prompt: content,
+              mode: targetPersonality,
+              duration: extractDuration(content),
+            }),
+            signal: abortController.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            throw new Error(await response.text() || "Audio synthesis overloaded.");
+          }
+
+          const blob = await response.blob();
+          console.log("Music blob received, size:", blob.size);
+          const audioUrl = URL.createObjectURL(blob);
+
+          setChats((prevChats) =>
+            prevChats.map((c) =>
+              c.id === targetChatId
+                ? {
+                    ...c,
+                    messages: c.messages.map((m) =>
+                      m.id === blockId ? { ...m, isAudio: true, audioUrl, assistantMessage: "Audio generation complete." } : m
+                    ),
+                  }
+                : c
+            )
+          );
+        } catch (err: any) {
+          console.error("Audio generation failed:", err);
+          let errorMsg = "Neural composition stream interrupted.";
+          if (err.name === "AbortError") {
+            errorMsg = "Audio synthesis exceeded temporal limits (30min timeout).";
+          }
+          setChats((prevChats) =>
+            prevChats.map((c) =>
+              c.id === targetChatId
+                ? {
+                    ...c,
+                    messages: c.messages.map((m) =>
+                      m.id === blockId ? { ...m, assistantMessage: `Error: ${errorMsg}` } : m
+                    ),
+                  }
+                : c
+            )
+          );
+        } finally {
+          setIsGeneratingAudio(false);
+          setStreamingChatId(null);
+          setStreamingBlockId(null);
+          setThinkingState(null);
+          setChats((finalChats) => {
+            localStorage.setItem("liber_chats", JSON.stringify(finalChats));
+            return finalChats;
+          });
+        }
+      };
+
+      await generateAudio();
+      return;
+    }
+
+    // Normal Text Chat logic
     setIsStreaming(true);
     setStreamingChatId(targetChatId);
     setStreamingBlockId(blockId);
@@ -715,7 +876,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const currentChat = chats.find(c => c.id === activeChatId);
     if (!currentChat) return;
 
-    const updatedMessages = currentChat.messages.filter(m => m.id !== blockId);
+    const updatedMessages = currentChat.messages.filter(m => {
+      if (m.id === blockId && m.audioUrl) {
+        URL.revokeObjectURL(m.audioUrl);
+      }
+      return m.id !== blockId;
+    });
     const updatedChats = chats.map(c =>
       c.id === activeChatId ? { ...c, messages: updatedMessages } : c
     );
@@ -794,6 +960,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         activeChat,
         isStreaming,
         isGeneratingImage,
+        isGeneratingAudio,
         thinkingState,
         streamingChatId,
         streamingBlockId,
@@ -812,6 +979,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         sendMessage,
         deleteMessageBlock,
         generateImage,
+        setGeneratedImages,
       }}
     >
       {children}

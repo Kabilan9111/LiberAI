@@ -6,6 +6,8 @@ export interface MessageBlock {
   assistantMessage: string;
   timestamp: Date;
   personalityMode: PersonalityMode;
+  isAudio?: boolean;
+  audioUrl?: string;
 }
 
 export type PersonalityMode =
@@ -53,6 +55,37 @@ export type ImageStyle =
 
 export type AspectRatio = "1:1" | "16:9" | "3:4";
 
+// Hugging Face model types
+export type HFModelId =
+  | "SG161222/Realistic_Vision_V5.1_noVAE"
+  | "Lykon/DreamShaper"
+  | "AstraliteHeart/pony-diffusion";
+
+export interface HFModel {
+  id: HFModelId;
+  name: string;
+  description: string;
+  useCases: string[];
+  style: ImageStyle;
+  negativePrompt: string;
+  promptSuffix: string;
+}
+
+export interface HFImageRequest {
+  prompt: string;
+  model: HFModelId;
+  aspectRatio: AspectRatio;
+  style: ImageStyle;
+}
+
+export interface HFImageResult {
+  imageUrl: string;
+  model: HFModelId;
+  prompt: string;
+  aspectRatio: AspectRatio;
+  style: ImageStyle;
+}
+
 export interface GeneratedImage {
   id: string;
   prompt: string;
@@ -60,6 +93,8 @@ export interface GeneratedImage {
   style: ImageStyle;
   aspectRatio: AspectRatio;
   createdAt: Date;
+  hfModel?: HFModelId;
+  isHFGenerated?: boolean;
 }
 
 export interface PersonalitySettings {

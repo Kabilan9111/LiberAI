@@ -110,14 +110,21 @@ export function FloatingInputDock({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [searchActive, setSearchActive] = useState(false);
   const [reasonActive, setReasonActive] = useState(false);
+  const [rippleKey, setRippleKey] = useState(0);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
 
+  const triggerSend = () => {
+    if (!input.trim() || isStreaming) return;
+    setRippleKey((prev) => prev + 1);
+    handleSend();
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      triggerSend();
     }
   };
 
@@ -144,11 +151,16 @@ export function FloatingInputDock({
 
   return (
     <div className="p-4 md:p-6 bg-gradient-to-t from-black via-black/85 to-transparent z-20 select-none flex flex-col gap-2 items-center">
-      <div className="w-full max-w-3xl relative">
+      <motion.div
+        animate={{ y: [0, -3, 0] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        className="w-full max-w-3xl relative group/dock"
+      >
         <div
           className={cn(
-            "relative rounded-2xl border bg-zinc-950/20 backdrop-blur-3xl p-3 shadow-[0_4px_30px_rgba(0,0,0,0.65)] flex flex-col transition-all duration-300",
-            accent.border
+            "relative rounded-2xl border border-white/[0.08] bg-[#0a0a0a]/50 backdrop-blur-3xl p-3 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.1)] flex flex-col transition-all duration-500",
+            "hover:bg-[#0a0a0a]/70 hover:border-white/[0.15] hover:shadow-[0_8px_40px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.2)]",
+            isStreaming && "border-white/30 shadow-[0_0_30px_rgba(255,255,255,0.05)]"
           )}
         >
           <textarea
@@ -296,28 +308,42 @@ export function FloatingInputDock({
                 <Mic className="w-4 h-4" />
               </button>
 
-              {/* Send circle button with '>' */}
-              <button
-                onClick={handleSend}
-                disabled={!input.trim() || isStreaming}
-                className={cn(
-                  "w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.4)] border border-purple-500/20",
-                  input.trim() && !isStreaming
-                    ? "bg-gradient-to-tr from-purple-600 to-fuchsia-600 hover:scale-105 text-white"
-                    : "text-zinc-600 bg-white/5 cursor-not-allowed shadow-none border-transparent"
-                )}
-                title="Transmit prompt"
-              >
-                {isStreaming ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-white" />
-                ) : (
-                  <span className="text-xs font-bold font-mono translate-x-[0.5px] font-space text-white">&gt;</span>
-                )}
-              </button>
+              {/* Send circle button with '>' and ripple effect */}
+              <div className="relative">
+                <AnimatePresence>
+                  {rippleKey > 0 && (
+                    <motion.div
+                      key={rippleKey}
+                      initial={{ scale: 1, opacity: 0.8 }}
+                      animate={{ scale: 3, opacity: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
+                      className="absolute inset-0 rounded-full bg-white/40 pointer-events-none"
+                    />
+                  )}
+                </AnimatePresence>
+                <button
+                  onClick={triggerSend}
+                  disabled={!input.trim() || isStreaming}
+                  className={cn(
+                    "relative w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.4)] border border-purple-500/20 z-10",
+                    input.trim() && !isStreaming
+                      ? "bg-gradient-to-tr from-purple-600 to-fuchsia-600 hover:scale-105 text-white"
+                      : "text-zinc-600 bg-white/5 cursor-not-allowed shadow-none border-transparent"
+                  )}
+                  title="Transmit prompt"
+                >
+                  {isStreaming ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  ) : (
+                    <span className="text-xs font-bold font-mono translate-x-[0.5px] font-space text-white">&gt;</span>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
       
       {/* Disclaimer under input */}
       <span className="text-[9px] font-mono text-zinc-600 tracking-wider select-none mt-1">
